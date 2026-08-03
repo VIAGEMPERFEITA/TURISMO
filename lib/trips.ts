@@ -1,90 +1,340 @@
-export type Trip = {
-  slug: string;
+export type TripInternalStatus =
+  | "rascunho"
+  | "demonstracao"
+  | "aguardando_confirmacao"
+  | "pronto_para_publicar"
+  | "arquivado";
+
+export type TripPublicStatus =
+  | "inscricoes_abertas"
+  | "ultimas_vagas"
+  | "em_breve"
+  | "lista_de_espera"
+  | "esgotada"
+  | "encerrada";
+
+export type TripCategory = "religioso" | "cultural" | "personalizado";
+
+export type ItineraryDay = {
+  day: number;
+  city?: string;
   title: string;
-  shortTitle: string;
-  destination: string;
-  period: string;
-  days: string;
-  departure: string;
-  status: "Demonstração" | "Rascunho";
-  image: string;
+  description?: string;
+  hotel?: string;
+  meals?: string[];
+  activities?: string[];
+  transportation?: string;
+  notes?: string;
+};
+
+export type Trip = {
+  id: string;
+  name: string;
+  slug: string;
+  subtitle: string;
+  shortDescription: string;
+  fullDescription: string;
+  coverImage: string;
   gallery: string[];
-  description: string;
-  itinerary: string[];
+  videoUrl?: string;
+  primaryDestination: string;
+  countries: string[];
+  cities: string[];
+  departureDate?: string;
+  returnDate?: string;
+  month?: number;
+  year?: number;
+  days: number;
+  nights: number;
+  departureCity: string;
+  availableAirports: string[];
+  category: TripCategory;
+  tripType: string;
+  leader?: string;
+  coordinator?: string;
+  airline?: string;
+  hotelCategory?: string;
+  totalSeats?: number;
+  remainingSeats?: number;
+  publicStatus: TripPublicStatus;
+  internalStatus: TripInternalStatus;
+  featured: boolean;
+  published: boolean;
+  price?: number;
+  currency?: "BRL" | "USD" | "EUR";
+  deposit?: number;
+  installments?: string;
+  commercialNotes?: string;
+  itinerary: ItineraryDay[];
   included: string[];
   notIncluded: string[];
-  faq: Array<[string, string]>;
+  optionalServices: string[];
+  documentation: string[];
+  faq: Array<{ question: string; answer: string }>;
+  seo: { title: string; description: string; noIndex?: boolean };
+  differentiator?: string;
+};
+
+export const publicStatusLabels: Record<TripPublicStatus, string> = {
+  inscricoes_abertas: "Inscrições abertas",
+  ultimas_vagas: "Últimas vagas",
+  em_breve: "Em breve",
+  lista_de_espera: "Lista de espera",
+  esgotada: "Esgotada",
+  encerrada: "Encerrada",
+};
+
+export const internalStatusLabels: Record<TripInternalStatus, string> = {
+  rascunho: "Rascunho",
+  demonstracao: "Demonstração",
+  aguardando_confirmacao: "Aguardando confirmação",
+  pronto_para_publicar: "Pronto para publicar",
+  arquivado: "Arquivado",
 };
 
 const commonIncluded = [
-  "Passagens aéreas internacionais conforme programação",
-  "Hospedagem em hotéis selecionados com café da manhã",
-  "Traslados e deslocamentos em veículo executivo",
-  "Guia especializado em português",
-  "Ingressos para visitas previstas no roteiro",
-  "Acompanhamento da equipe Viagem Perfeita",
+  "Passagens aéreas internacionais conforme programação final",
+  "Hospedagem conforme categoria informada na proposta oficial",
+  "Traslados e deslocamentos previstos no roteiro final",
+  "Acompanhamento conforme confirmação comercial",
 ];
 
 const commonNotIncluded = [
   "Despesas pessoais e serviços opcionais",
-  "Refeições e bebidas não mencionadas no roteiro",
-  "Documentação, passaporte e vistos quando aplicáveis",
-  "Excesso de bagagem e alterações solicitadas pelo viajante",
+  "Itens não indicados expressamente na proposta oficial",
+  "Documentação pessoal, quando não prevista no contrato",
 ];
 
-const commonFaq: Array<[string, string]> = [
-  ["As informações desta página já estão confirmadas?", "Não. Esta caravana está marcada como demonstração. Datas, serviços, valores e disponibilidade serão revisados pela Viagem Perfeita antes da publicação comercial."],
-  ["A viagem terá acompanhamento em português?", "A estrutura demonstrativa prevê coordenação brasileira e guias locais em português. A confirmação constará no contrato final da viagem."],
-  ["Como recebo valores e condições?", "Preencha o formulário de interesse. A equipe entrará em contato pelo WhatsApp com as informações oficiais e atualizadas."],
+const commonDocumentation = [
+  "Passaporte válido conforme regras do destino",
+  "Vistos e autorizações conforme nacionalidade e roteiro",
+  "Requisitos sanitários vigentes na data do embarque",
 ];
 
+const commonFaq = [
+  {
+    question: "Quando as informações estarão disponíveis?",
+    answer:
+      "A página será publicada somente depois da validação de datas, serviços, valores e disponibilidade pela Viagem Perfeita Turismo.",
+  },
+];
+
+type DraftTripInput = Pick<
+  Trip,
+  | "id"
+  | "name"
+  | "slug"
+  | "subtitle"
+  | "shortDescription"
+  | "fullDescription"
+  | "coverImage"
+  | "gallery"
+  | "primaryDestination"
+  | "countries"
+  | "cities"
+  | "month"
+  | "year"
+  | "days"
+  | "nights"
+  | "departureCity"
+  | "category"
+  | "tripType"
+  | "internalStatus"
+  | "itinerary"
+>;
+
+function createDraftTrip(input: DraftTripInput): Trip {
+  return {
+    ...input,
+    availableAirports: [input.departureCity],
+    publicStatus: "em_breve",
+    featured: false,
+    published: false,
+    included: commonIncluded,
+    notIncluded: commonNotIncluded,
+    optionalServices: [],
+    documentation: commonDocumentation,
+    faq: commonFaq,
+    seo: {
+      title: `${input.name} | Viagem Perfeita Turismo`,
+      description: input.shortDescription,
+      noIndex: true,
+    },
+  };
+}
+
+function itinerary(items: Array<[string, string]>): ItineraryDay[] {
+  return items.map(([city, title], index) => ({ day: index + 1, city, title }));
+}
+
+/**
+ * Fonte central de caravanas. Todos os registros abaixo são internos e não
+ * confirmados. Eles permanecem fora do site público até `published` ser true e
+ * o status interno ser `pronto_para_publicar`.
+ */
 export const trips: Trip[] = [
-  {
-    slug: "israel-2027", title: "Israel — Caminhos da Fé", shortTitle: "Caminhos da Fé", destination: "Israel + Roma", period: "Setembro de 2027", days: "11 dias", departure: "São Paulo", status: "Demonstração",
-    image: "https://images.unsplash.com/photo-1548018560-c7196548e84d?auto=format&fit=crop&w=1800&q=88",
-    gallery: ["https://images.unsplash.com/photo-1548018560-c7196548e84d?auto=format&fit=crop&w=1000&q=82","https://images.unsplash.com/photo-1526481280695-3c687fd643ed?auto=format&fit=crop&w=1000&q=82","https://images.unsplash.com/photo-1547483238-2cbf881a559f?auto=format&fit=crop&w=1000&q=82"],
-    description: "Uma jornada demonstrativa pelos cenários centrais da história cristã, combinando a contemplação de Roma com experiências culturais e espirituais na Galileia e em Jerusalém.",
-    itinerary: ["Roma — chegada e acolhimento","Roma cristã e Vaticano","Tel Aviv e Cesareia Marítima","Nazaré, Caná e Monte Tabor","Mar da Galileia e Cafarnaum","Rio Jordão e Mar Morto","Jerusalém — Monte das Oliveiras","Via Dolorosa e Santo Sepulcro"], included: commonIncluded, notIncluded: commonNotIncluded, faq: commonFaq,
-  },
-  {
-    slug: "israel-egito-2027", title: "Israel & Egito — Raízes do Êxodo", shortTitle: "Raízes do Êxodo", destination: "Egito + Israel", period: "Novembro de 2027", days: "12 dias", departure: "São Paulo", status: "Demonstração",
-    image: "https://images.unsplash.com/photo-1568322445389-f64ac2515020?auto=format&fit=crop&w=1800&q=88",
-    gallery: ["https://images.unsplash.com/photo-1568322445389-f64ac2515020?auto=format&fit=crop&w=1000&q=82","https://images.unsplash.com/photo-1539650116574-75c0c6d73f6e?auto=format&fit=crop&w=1000&q=82","https://images.unsplash.com/photo-1548018560-c7196548e84d?auto=format&fit=crop&w=1000&q=82"],
-    description: "Uma proposta demonstrativa que conecta o legado do Egito aos caminhos bíblicos de Israel, com narrativa histórica, visitas guiadas e momentos de espiritualidade.",
-    itinerary: ["Cairo e boas-vindas","Pirâmides de Gizé e Museu Egípcio","Cairo histórico","Travessia para Israel","Mar Morto e Jericó","Galileia e Cafarnaum","Nazaré e Caná","Jerusalém antiga","Monte das Oliveiras e Getsêmani"], included: commonIncluded, notIncluded: commonNotIncluded, faq: commonFaq,
-  },
-  {
-    slug: "turquia-grecia-2027", title: "Turquia & Grécia — Passos de Paulo", shortTitle: "Passos de Paulo", destination: "Turquia + Grécia", period: "Março de 2027", days: "14 dias", departure: "São Paulo", status: "Demonstração",
-    image: "https://images.unsplash.com/photo-1504512485720-7d83a16ee930?auto=format&fit=crop&w=1800&q=88",
-    gallery: ["https://images.unsplash.com/photo-1504512485720-7d83a16ee930?auto=format&fit=crop&w=1000&q=82","https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?auto=format&fit=crop&w=1000&q=82","https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1000&q=82"],
-    description: "Uma experiência demonstrativa pelos caminhos das primeiras comunidades cristãs, atravessando paisagens da Turquia e sítios históricos da Grécia.",
-    itinerary: ["Istambul — chegada","Istambul histórica","Capadócia","Éfeso e Casa de Maria","Travessia para a Grécia","Tessalônica e Bereia","Meteora","Delfos","Atenas e Corinto"], included: commonIncluded, notIncluded: commonNotIncluded, faq: commonFaq,
-  },
-  {
-    slug: "jordania-israel-2027", title: "Jordânia & Israel — Jornada da Promessa", shortTitle: "Jornada da Promessa", destination: "Jordânia + Israel", period: "Maio de 2027", days: "13 dias", departure: "São Paulo", status: "Rascunho",
-    image: "https://images.unsplash.com/photo-1548786811-dd6e453ccca7?auto=format&fit=crop&w=1800&q=88",
-    gallery: ["https://images.unsplash.com/photo-1548786811-dd6e453ccca7?auto=format&fit=crop&w=1000&q=82","https://images.unsplash.com/photo-1539650116574-75c0c6d73f6e?auto=format&fit=crop&w=1000&q=82","https://images.unsplash.com/photo-1548018560-c7196548e84d?auto=format&fit=crop&w=1000&q=82"],
-    description: "Rascunho de uma jornada entre Petra, o deserto de Wadi Rum e os lugares essenciais da Terra Santa.",
-    itinerary: ["Amã — chegada","Monte Nebo e Madaba","Petra","Wadi Rum","Travessia para Israel","Galileia","Nazaré","Mar Morto","Jerusalém"], included: commonIncluded, notIncluded: commonNotIncluded, faq: commonFaq,
-  },
-  {
-    slug: "italia-2027", title: "Itália — Caminhos de São Francisco", shortTitle: "Caminhos de São Francisco", destination: "Itália", period: "Junho de 2027", days: "10 dias", departure: "São Paulo", status: "Rascunho",
-    image: "https://images.unsplash.com/photo-1529260830199-42c24126f198?auto=format&fit=crop&w=1800&q=88",
-    gallery: ["https://images.unsplash.com/photo-1529260830199-42c24126f198?auto=format&fit=crop&w=1000&q=82","https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=1000&q=82","https://images.unsplash.com/photo-1533104816931-20fa691ff6ca?auto=format&fit=crop&w=1000&q=82"],
-    description: "Rascunho de uma viagem cultural e espiritual por Roma, Assis e cidades que preservam importantes capítulos da história cristã.",
-    itinerary: ["Roma — chegada","Roma antiga","Vaticano","Assis","Cássia","Florença","Orvieto","Roma — despedida"], included: commonIncluded, notIncluded: commonNotIncluded, faq: commonFaq,
-  },
-  {
-    slug: "emirados-egito-2027", title: "Emirados & Egito — Entre História e Futuro", shortTitle: "Entre História e Futuro", destination: "Dubai + Abu Dhabi + Egito", period: "Outubro de 2027", days: "13 dias", departure: "São Paulo", status: "Rascunho",
-    image: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1800&q=88",
-    gallery: ["https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1000&q=82","https://images.unsplash.com/photo-1512632578888-169bbbc64f33?auto=format&fit=crop&w=1000&q=82","https://images.unsplash.com/photo-1568322445389-f64ac2515020?auto=format&fit=crop&w=1000&q=82"],
-    description: "Rascunho de uma experiência que combina arquitetura contemporânea, cultura árabe e a grandiosidade histórica do Egito.",
-    itinerary: ["Dubai — chegada","Dubai contemporânea","Abu Dhabi","Deserto dos Emirados","Cairo","Pirâmides de Gizé","Museu Egípcio","Cairo histórico","Retorno ao Brasil"], included: commonIncluded, notIncluded: commonNotIncluded, faq: commonFaq,
-  },
+  createDraftTrip({
+    id: "trip_israel_2027",
+    name: "Israel — Caminhos da Fé",
+    slug: "israel-2027",
+    subtitle: "Caminhos da Fé",
+    shortDescription: "Proposta interna de jornada religiosa por Israel e Roma.",
+    fullDescription: "Estrutura preliminar aguardando validação comercial e operacional da Viagem Perfeita Turismo.",
+    coverImage: "https://images.unsplash.com/photo-1548018560-c7196548e84d?auto=format&fit=crop&w=1800&q=88",
+    gallery: ["https://images.unsplash.com/photo-1548018560-c7196548e84d?auto=format&fit=crop&w=1000&q=82"],
+    primaryDestination: "Israel",
+    countries: ["Israel", "Itália"],
+    cities: ["Jerusalém", "Galileia", "Roma"],
+    month: 9,
+    year: 2027,
+    days: 11,
+    nights: 10,
+    departureCity: "São Paulo",
+    category: "religioso",
+    tripType: "Caravana internacional",
+    internalStatus: "demonstracao",
+    itinerary: itinerary([["Roma", "Chegada e acolhimento"], ["Roma", "Roma cristã"], ["Jerusalém", "Chegada à Terra Santa"]]),
+  }),
+  createDraftTrip({
+    id: "trip_israel_egito_2027",
+    name: "Israel & Egito — Raízes do Êxodo",
+    slug: "israel-egito-2027",
+    subtitle: "Raízes do Êxodo",
+    shortDescription: "Proposta interna conectando o Egito aos caminhos bíblicos de Israel.",
+    fullDescription: "Estrutura preliminar aguardando confirmação de fornecedores, datas e condições comerciais.",
+    coverImage: "https://images.unsplash.com/photo-1568322445389-f64ac2515020?auto=format&fit=crop&w=1800&q=88",
+    gallery: ["https://images.unsplash.com/photo-1568322445389-f64ac2515020?auto=format&fit=crop&w=1000&q=82"],
+    primaryDestination: "Egito",
+    countries: ["Egito", "Israel"],
+    cities: ["Cairo", "Jerusalém", "Galileia"],
+    month: 11,
+    year: 2027,
+    days: 12,
+    nights: 11,
+    departureCity: "São Paulo",
+    category: "religioso",
+    tripType: "Caravana internacional",
+    internalStatus: "demonstracao",
+    itinerary: itinerary([["Cairo", "Chegada e acolhimento"], ["Cairo", "Patrimônio histórico"], ["Jerusalém", "Caminhos bíblicos"]]),
+  }),
+  createDraftTrip({
+    id: "trip_turquia_grecia_2027",
+    name: "Turquia & Grécia — Passos de Paulo",
+    slug: "turquia-grecia-2027",
+    subtitle: "Passos de Paulo",
+    shortDescription: "Proposta interna pelos caminhos das primeiras comunidades cristãs.",
+    fullDescription: "Estrutura preliminar aguardando confirmação operacional e comercial.",
+    coverImage: "https://images.unsplash.com/photo-1504512485720-7d83a16ee930?auto=format&fit=crop&w=1800&q=88",
+    gallery: ["https://images.unsplash.com/photo-1504512485720-7d83a16ee930?auto=format&fit=crop&w=1000&q=82"],
+    primaryDestination: "Turquia e Grécia",
+    countries: ["Turquia", "Grécia"],
+    cities: ["Istambul", "Éfeso", "Atenas", "Corinto"],
+    month: 3,
+    year: 2027,
+    days: 14,
+    nights: 13,
+    departureCity: "São Paulo",
+    category: "religioso",
+    tripType: "Caravana internacional",
+    internalStatus: "demonstracao",
+    itinerary: itinerary([["Istambul", "Chegada"], ["Éfeso", "Patrimônio histórico"], ["Atenas", "Caminhos de Paulo"]]),
+  }),
+  createDraftTrip({
+    id: "trip_jordania_israel_2027",
+    name: "Jordânia & Israel — Jornada da Promessa",
+    slug: "jordania-israel-2027",
+    subtitle: "Jornada da Promessa",
+    shortDescription: "Rascunho interno entre Jordânia e Israel.",
+    fullDescription: "Rascunho aguardando validação integral.",
+    coverImage: "https://images.unsplash.com/photo-1548786811-dd6e453ccca7?auto=format&fit=crop&w=1800&q=88",
+    gallery: [],
+    primaryDestination: "Jordânia",
+    countries: ["Jordânia", "Israel"],
+    cities: ["Amã", "Petra", "Jerusalém"],
+    month: 5,
+    year: 2027,
+    days: 13,
+    nights: 12,
+    departureCity: "São Paulo",
+    category: "religioso",
+    tripType: "Caravana internacional",
+    internalStatus: "rascunho",
+    itinerary: itinerary([["Amã", "Chegada"], ["Petra", "Visita prevista"], ["Jerusalém", "Chegada prevista"]]),
+  }),
+  createDraftTrip({
+    id: "trip_italia_2027",
+    name: "Itália — Caminhos de São Francisco",
+    slug: "italia-2027",
+    subtitle: "Caminhos de São Francisco",
+    shortDescription: "Rascunho interno de viagem cultural e espiritual pela Itália.",
+    fullDescription: "Rascunho aguardando validação integral.",
+    coverImage: "https://images.unsplash.com/photo-1529260830199-42c24126f198?auto=format&fit=crop&w=1800&q=88",
+    gallery: [],
+    primaryDestination: "Itália",
+    countries: ["Itália"],
+    cities: ["Roma", "Assis", "Florença"],
+    month: 6,
+    year: 2027,
+    days: 10,
+    nights: 9,
+    departureCity: "São Paulo",
+    category: "religioso",
+    tripType: "Caravana internacional",
+    internalStatus: "rascunho",
+    itinerary: itinerary([["Roma", "Chegada"], ["Assis", "Caminhos franciscanos"], ["Florença", "Patrimônio cultural"]]),
+  }),
+  createDraftTrip({
+    id: "trip_emirados_egito_2027",
+    name: "Emirados & Egito — Entre História e Futuro",
+    slug: "emirados-egito-2027",
+    subtitle: "Entre História e Futuro",
+    shortDescription: "Rascunho interno combinando Emirados e Egito.",
+    fullDescription: "Rascunho aguardando validação integral.",
+    coverImage: "https://images.unsplash.com/photo-1512453979798-5ea266f8880c?auto=format&fit=crop&w=1800&q=88",
+    gallery: [],
+    primaryDestination: "Emirados Árabes Unidos",
+    countries: ["Emirados Árabes Unidos", "Egito"],
+    cities: ["Dubai", "Abu Dhabi", "Cairo"],
+    month: 10,
+    year: 2027,
+    days: 13,
+    nights: 12,
+    departureCity: "São Paulo",
+    category: "cultural",
+    tripType: "Viagem cultural",
+    internalStatus: "rascunho",
+    itinerary: itinerary([["Dubai", "Chegada"], ["Abu Dhabi", "Experiência cultural"], ["Cairo", "Patrimônio histórico"]]),
+  }),
 ];
 
-export const featuredTrips = trips.slice(0, 3);
+export function isTripPublic(trip: Trip) {
+  return trip.published && trip.internalStatus === "pronto_para_publicar";
+}
+
+export const publishedTrips = trips.filter(isTripPublic);
+export const featuredTrips = publishedTrips.filter((trip) => trip.featured);
 
 export function getTripBySlug(slug: string) {
   return trips.find((trip) => trip.slug === slug);
+}
+
+export function getPublishedTripBySlug(slug: string) {
+  return publishedTrips.find((trip) => trip.slug === slug);
+}
+
+export function formatTripPeriod(trip: Trip) {
+  if (trip.departureDate && trip.returnDate) {
+    const formatter = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" });
+    return `${formatter.format(new Date(trip.departureDate))} a ${formatter.format(new Date(trip.returnDate))}`;
+  }
+  if (trip.month && trip.year) {
+    const month = new Intl.DateTimeFormat("pt-BR", { month: "long", timeZone: "UTC" }).format(new Date(Date.UTC(trip.year, trip.month - 1, 1)));
+    return `${month.charAt(0).toUpperCase()}${month.slice(1)} de ${trip.year}`;
+  }
+  return "Data a confirmar";
+}
+
+export function formatTripPrice(trip: Trip) {
+  if (!trip.price || !trip.currency) return "Consulte valores";
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: trip.currency }).format(trip.price);
 }

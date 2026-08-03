@@ -1,7 +1,14 @@
-import { ArrowLeft, ArrowRight, Clock3, Plane } from "lucide-react";
+import type { Metadata } from "next";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { trips } from "../../lib/trips";
+import { TripsCatalog } from "../../components/trips-catalog";
+import { publishedTrips } from "../../lib/trips";
+
+export const metadata: Metadata = {
+  title: "Caravanas | Viagem Perfeita Turismo",
+  description: "Consulte as caravanas oficialmente publicadas pela Viagem Perfeita Turismo.",
+};
 
 export default function TripsCatalogPage() {
-  return <main className="catalog"><section className="catalog-hero"><div className="shell"><Link href="/"><ArrowLeft/> Voltar ao início</Link><p className="eyebrow light">Catálogo de caravanas</p><h1>Jornadas que<br/><em>transformam.</em></h1><p>Explore propostas de roteiros internacionais preparadas para demonstrar a experiência do catálogo. Todos os registros abaixo aguardam validação comercial da Viagem Perfeita.</p></div></section><section className="section"><div className="shell"><div className="catalog-notice"><b>Conteúdo demonstrativo</b><span>Datas, valores, serviços e disponibilidade ainda não estão confirmados.</span></div><div className="catalog-grid">{trips.map((trip)=><article className="trip-card" key={trip.slug}><Link className="trip-card-link" href={`/caravanas/${trip.slug}`}><div className="trip-img" style={{backgroundImage:`linear-gradient(180deg,transparent 55%,rgba(5,23,19,.56)),url(${trip.image})`}}><span className="status demo">{trip.status}</span><span className="trip-place">{trip.destination}</span></div><div className="trip-body"><p>{trip.period}</p><h2>{trip.title}</h2><div className="trip-meta"><span><Clock3/> {trip.days}</span><span><Plane/> Saída de {trip.departure}</span></div><span className="trip-discover">Ver página da caravana <ArrowRight/></span></div></Link></article>)}</div></div></section></main>;
+  return <main className="catalog"><section className="catalog-hero"><div className="shell"><Link href="/"><ArrowLeft /> Voltar ao início</Link><p className="eyebrow light">Catálogo de caravanas</p><h1>Jornadas que<br/><em>transformam.</em></h1><p>Encontre viagens com propósito, acompanhamento próximo e informações validadas pela nossa equipe.</p></div></section><section className="section catalog-content"><div className="shell"><TripsCatalog trips={publishedTrips} /></div></section></main>;
 }

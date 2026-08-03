@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import "./contact-overrides.css";
+import "./catalog.css";
 import { WhatsAppFloating } from "../components/whatsapp-floating";
 import { WhatsAppContactProvider } from "../components/whatsapp-contact-provider";
 
