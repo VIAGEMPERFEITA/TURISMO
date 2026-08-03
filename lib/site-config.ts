@@ -17,14 +17,9 @@ export const siteConfig = {
 } as const;
 
 export const publicNavigation = [
-  ["Início", "/"],
   ["Caravanas", "/caravanas"],
   ["Destinos", "/destinos"],
-  ["Personalizadas", "/viagens-personalizadas"],
-  ["Líderes", "/lideres-de-caravanas"],
-  ["Quem somos", "/quem-somos"],
-  ["Experiências", "/caravanas-realizadas"],
   ["Depoimentos", "/depoimentos"],
+  ["Quem somos", "/quem-somos"],
   ["Blog", "/blog"],
-  ["Contato", "/contato"],
 ] as const;
