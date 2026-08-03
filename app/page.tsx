@@ -13,7 +13,7 @@ import { TripCard } from "../components/trip-card";
 import { CompanyLogo } from "../components/company-logo";
 import { RealJourneysGallery } from "../components/real-journeys-gallery";
 import { PublicFooter } from "../components/public-shell";
-import { featuredTrips } from "../lib/trips";
+import { publishedTrips } from "../lib/trips";
 
 const destinations = [
   ["Israel", "Onde as Escrituras ganham vida", "https://images.unsplash.com/photo-1548018560-c7196548e84d?auto=format&fit=crop&w=900&q=80"],
@@ -70,17 +70,18 @@ export default function Home() {
         <div className="trustbar shell"><span><ShieldCheck/>Assistência em cada etapa</span><span><Users/>Grupos cuidadosamente acompanhados</span><span><Globe2/>Curadoria internacional</span><span><HeartHandshake/>Atendimento humano</span></div>
       </section>
 
+      <section className="section home-featured-experiences" aria-labelledby="featured-experiences-title"><div className="shell">
+        <div className="section-head"><div><p className="eyebrow">Próximas caravanas</p><h2 id="featured-experiences-title">Escolha sua próxima<br/>jornada.</h2></div><p className="featured-intro">Experiências que unem fé, história, cultura e propósito, apresentadas em ordem de prioridade e saída.</p></div>
+        <div className="catalog-grid home-confirmed-grid">{publishedTrips.slice(0,8).map((trip)=><TripCard key={trip.id} trip={trip}/>)}</div>
+        <Link className="journey-all-link" href="/caravanas">Ver catálogo completo <ArrowRight size={16}/></Link>
+      </div></section>
+
       <section className="intro section" id="sobre"><div className="shell intro-grid">
         <div><p className="eyebrow">Por que Viagem Perfeita</p><h2>A tranquilidade de ser cuidado.<br/><em>A emoção de se transformar.</em></h2></div>
         <div className="intro-copy"><p>Acreditamos que uma grande viagem começa muito antes do embarque. Ela nasce na escuta, ganha forma nos detalhes e se torna inesquecível quando cada viajante se sente verdadeiramente acolhido.</p><Link href="/quem-somos">Conheça a nossa essência <ArrowRight/></Link></div>
       </div>
       <div className="shell metrics"><div><strong>Cuidado</strong><span>em cada detalhe da jornada</span></div><div><strong>Clareza</strong><span>nas informações comerciais</span></div><div><strong>Presença</strong><span>antes, durante e depois</span></div><div><strong>Propósito</strong><span>em cada experiência</span></div></div>
       </section>
-
-      <section className="section trips-section" id="caravanas"><div className="shell">
-        <div className="section-head"><div><p className="eyebrow">Próximas jornadas</p><h2>Escolha onde sua fé<br/>vai te levar.</h2></div><Link className="text-link" href="/caravanas">Ver todas as caravanas <ArrowRight/></Link></div>
-        {featuredTrips.length ? <div className="trip-grid">{featuredTrips.map((trip,i)=><motion.div initial={{opacity:0,y:20}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{delay:i*.1}} key={trip.id}><TripCard trip={trip}/></motion.div>)}</div> : <div className="home-trips-empty"><p>As próximas caravanas aparecerão aqui quando as informações estiverem oficialmente confirmadas.</p><Link className="btn catalog-button" href="/caravanas">Acompanhar próximas viagens <ArrowRight/></Link></div>}
-      </div></section>
 
       <section className="experience section"><div className="shell experience-grid"><div className="experience-photo"><div className="floating-note"><Quote/><p>Cada informação publicada passa pela validação da equipe antes de chegar até você.</p><span>Compromisso Viagem Perfeita</span></div></div><div className="experience-copy"><p className="eyebrow light">O nosso jeito de cuidar</p><h2>Você vive a experiência.<br/><em>Nós cuidamos de tudo.</em></h2><p>Da primeira conversa ao abraço na volta, cada detalhe é pensado para que você viaje com leveza, confiança e presença.</p><ul><li><CircleCheck/>Roteiros com propósito e ritmo equilibrado</li><li><CircleCheck/>Informações comerciais apresentadas com clareza</li><li><CircleCheck/>Acompanhamento próximo em cada etapa</li><li><CircleCheck/>Orientação de documentos e preparação</li></ul><WhatsAppLink className="btn warm" buttonText="Solicitar orçamento">Solicitar orçamento <ArrowRight/></WhatsAppLink></div></div></section>
 

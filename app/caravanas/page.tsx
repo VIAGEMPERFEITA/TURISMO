@@ -3,7 +3,6 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { TripsCatalog } from "../../components/trips-catalog";
 import { publishedTrips } from "../../lib/trips";
-import { planningExperiences } from "../../lib/experiences";
 import { PublicPage } from "../../components/public-shell";
 
 export const metadata: Metadata = {
@@ -13,5 +12,5 @@ export const metadata: Metadata = {
 };
 
 export default function TripsCatalogPage() {
-  return <PublicPage><div className="catalog"><section className="catalog-hero"><div className="shell"><Link href="/"><ArrowLeft /> Voltar ao início</Link><p className="eyebrow light">Catálogo de caravanas</p><h1>Jornadas que<br/><em>transformam.</em></h1><p>Consulte caravanas confirmadas e manifeste interesse em experiências ainda sem data definida.</p></div></section><section className="section catalog-content"><div className="shell"><TripsCatalog trips={publishedTrips} planning={planningExperiences} /></div></section></div></PublicPage>;
+  return <PublicPage><div className="catalog"><section className="catalog-hero"><div className="shell"><Link href="/"><ArrowLeft /> Voltar ao início</Link><p className="eyebrow light">Catálogo contínuo de caravanas</p><h1>Próximas<br/><em>saídas.</em></h1><p>Escolha sua próxima jornada e viva experiências que unem fé, história, cultura e propósito.</p></div></section><section className="section catalog-content"><div className="shell"><TripsCatalog trips={publishedTrips} /></div></section></div></PublicPage>;
 }

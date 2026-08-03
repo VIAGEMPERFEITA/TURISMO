@@ -11,7 +11,7 @@ type WhatsAppLinkProps = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "type"> &
   initialLead?: WhatsAppLead;
 };
 
-export function WhatsAppLink({ children, tripName, destination, period, buttonText, initialInterest, initialLead, className, onClick, ...props }: WhatsAppLinkProps) {
+export function WhatsAppLink({ children, tripName, destination, period, duration, status, buttonText, initialInterest, initialLead, className, onClick, ...props }: WhatsAppLinkProps) {
   const { openContact } = useWhatsAppContact();
   const label = buttonText ?? (typeof children === "string" ? children : "WhatsApp");
 
@@ -20,7 +20,7 @@ export function WhatsAppLink({ children, tripName, destination, period, buttonTe
       {...props}
       type="button"
       className={`whatsapp-trigger${className ? ` ${className}` : ""}`}
-      onClick={(event) => { onClick?.(event); openContact({ buttonText: label, tripName, destination, period, initialInterest, initialLead }); }}
+      onClick={(event) => { onClick?.(event); openContact({ buttonText: label, tripName, destination, period, duration, status, initialInterest, initialLead }); }}
     >
       {children}
     </button>

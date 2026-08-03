@@ -19,7 +19,7 @@ export function RealJourneysGallery({ preview = false }: { preview?: boolean }) 
         </div>
         <div className={`journey-video-grid${preview ? " preview" : ""}`}>
           {(preview ? videos.slice(0, 2) : videos).map((item) => <article className={item.vertical ? "journey-video vertical" : "journey-video"} key={item.id}>
-            <LazyVideo src={`${basePath}/media/israel/${item.video}`} poster={`${basePath}/media/israel/${item.poster}`} label={`${item.title}: vídeo de caravana realizada pela Viagem Perfeita`}/>
+            <LazyVideo src={`${basePath}/media/israel/${item.video}`} poster={`${basePath}/media/israel/${item.poster}`} label={`${item.title}: vídeo completo de caravana realizada pela Viagem Perfeita`} orientation={item.vertical ? "vertical" : "horizontal"}/>
             <div><span><MapPin/> Israel</span><h3>{item.title}</h3><p>{item.description}</p></div>
           </article>)}
         </div>
