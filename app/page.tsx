@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -14,6 +14,7 @@ import { CompanyLogo } from "../components/company-logo";
 import { RealJourneysGallery } from "../components/real-journeys-gallery";
 import { PublicFooter } from "../components/public-shell";
 import { publishedTrips } from "../lib/trips";
+import { publicNavigation, siteConfig } from "../lib/site-config";
 
 const destinations = [
   ["Israel", "Onde as Escrituras ganham vida", "https://images.unsplash.com/photo-1548018560-c7196548e84d?auto=format&fit=crop&w=900&q=80"],
@@ -40,15 +41,16 @@ export default function Home() {
   const [contactName, setContactName] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   const [contactDestination, setContactDestination] = useState("");
+  useEffect(()=>{document.body.classList.toggle("menu-open",menu);return()=>document.body.classList.remove("menu-open")},[menu]);
   return (
     <main id="inicio">
       <header className="header">
-        <div className="nav shell"><CompanyLogo variant="dark" href="/#inicio" />
-          <nav className={menu ? "navlinks open" : "navlinks"} aria-label="Navegação principal">
-            <Link href="/caravanas">Caravanas</Link><Link href="/destinos">Destinos</Link><Link href="/quem-somos">Quem somos</Link><Link href="/historias">Histórias</Link><Link href="/caravanas-realizadas">Experiências</Link><Link href="/contato">Contato</Link>
+        <div className="nav shell"><CompanyLogo variant="dark" href="/" />
+          <nav id="home-main-navigation" className={menu ? "navlinks open" : "navlinks"} aria-label="Navegação principal">
+            {publicNavigation.map(([label,href])=><Link href={href} key={href} onClick={()=>setMenu(false)}>{label}</Link>)}
           </nav>
           <WhatsAppLink className="nav-cta" buttonText="Fale com um consultor"><MessageCircle size={17}/> Fale com um consultor</WhatsAppLink>
-          <button className="menu" onClick={() => setMenu(!menu)} aria-label="Abrir menu">{menu ? <X/> : <Menu/>}</button>
+          <button type="button" className="menu" onClick={() => setMenu(!menu)} aria-label={menu?"Fechar menu":"Abrir menu"} aria-expanded={menu} aria-controls="home-main-navigation">{menu ? <X/> : <Menu/>}</button>
         </div>
       </header>
 
@@ -61,7 +63,7 @@ export default function Home() {
             <h1>Mais que uma viagem.<br/><em>Um encontro</em> com a sua fé.</h1>
             <p className="hero-lead">Jornadas internacionais cuidadosamente planejadas para você viver o extraordinário com segurança, propósito e todo o cuidado.</p>
             <div className="hero-actions"><Link className="btn primary" href="/caravanas">Conheça as caravanas <ArrowRight size={18}/></Link><Link className="btn ghost" href="/quem-somos"><Play size={16} fill="currentColor"/> Nossa história</Link></div>
-            <a className="hero-proof instagram-proof" href="https://www.instagram.com/viagemperfeitatrip" target="_blank" rel="noopener noreferrer" aria-label="Ver o Instagram da Viagem Perfeita Turismo"><Camera/><div><strong>Mais de 10 mil seguidores</strong><small>acompanham nossas jornadas no Instagram</small></div><ArrowRight/></a>
+            <a className="hero-proof instagram-proof" href={siteConfig.instagram} target="_blank" rel="noopener noreferrer" aria-label="Ver o Instagram da Viagem Perfeita Turismo"><Camera/><div><strong>Mais de 10 mil seguidores</strong><small>acompanham nossas jornadas no Instagram</small></div><ArrowRight/></a>
           </motion.div>
           <motion.aside initial={{opacity:0,x:30}} animate={{opacity:1,x:0}} transition={{delay:.2,duration:.7}} className="hero-card">
             <span className="live"><i/> Atendimento personalizado</span><p>Planeje com segurança</p><h3>Encontre sua próxima jornada</h3><div className="hero-meta"><span><CalendarDays/>Datas validadas</span><span><ShieldCheck/>Suporte próximo</span></div><div className="line"/><small>Receba somente informações oficiais da nossa equipe</small><WhatsAppLink buttonText="Falar com um consultor">Falar com um consultor <ArrowRight/></WhatsAppLink>

@@ -1,12 +1,12 @@
-.company-logo { position: relative; display: block; flex: 0 0 224px; width: 224px; height: 68px; overflow: hidden; border-radius: 2px; }
-.company-logo > span { position: absolute; inset: 0; display: block; background-repeat: no-repeat; background-position: center 47%; background-size: 336px auto; }
-.company-logo-dark { background: #000; }
-.company-logo-light { background: #fff; }
+.company-logo { position: relative; display: flex; align-items: center; flex: 0 0 224px; width: 224px; height: 68px; padding: 5px 10px; overflow: hidden; border-radius: 3px; background: #fff; }
+.company-logo > img { display: block; width: 100%; height: 100%; object-fit: contain; object-position: left center; }
+.company-logo-dark,.company-logo-light { background: #fff; }
 .nav .company-logo { margin-right: 8px; }
 .footer-grid .company-logo { margin: -10px 0 4px; }
 .catalog-content { padding-top: 72px; }
 .catalog-browser { display: grid; gap: 34px; }
-.catalog-desktop-filters { padding: 26px; background: #f4efe6; border: 1px solid #e2d8c9; }
+.catalog-single-filters { padding: 26px; background: #f4efe6; border: 1px solid #e2d8c9; }
+.catalog-filter-toggle { display: none; }
 .catalog-filter-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 18px; align-items: end; }
 .catalog-filter-grid label { display: grid; gap: 8px; min-width: 0; }
 .catalog-filter-grid label > span { color: #52665e; font-size: 9px; font-weight: 700; letter-spacing: 1.1px; text-transform: uppercase; }
@@ -27,7 +27,6 @@
 .catalog-toolbar select { min-height: 40px; width: 190px; }
 .catalog-toolbar button { display: inline-flex; align-items: center; gap: 6px; border: 0; background: none; color: #6d604f; cursor: pointer; font-size: 11px; }
 .catalog-toolbar button svg { width: 14px; }
-.catalog-mobile-filters { display: none; }
 .catalog-year > h2 { margin: 0 0 26px; color: #173d33; font: 48px Georgia, serif; }
 .catalog-month { margin-bottom: 52px; }
 .catalog-month > h3 { margin: 0 0 20px; padding-bottom: 12px; color: #8e693f; border-bottom: 1px solid #e2dbd0; font: 21px Georgia, serif; }
@@ -363,13 +362,13 @@ footer .footer-grid { grid-template-columns: 1.25fr repeat(4,1fr); }
 
 @media (max-width: 650px) {
   .company-logo { flex-basis: 164px; width: 164px; height: 58px; }
-  .company-logo > span { background-size: 255px auto; }
+  .company-logo > img { object-fit: contain; }
   .catalog-content { padding-top: 42px; }
-  .catalog-desktop-filters { display: none; }
-  .catalog-mobile-filters { display: block; border: 1px solid #ded6ca; background: #f4efe6; }
-  .catalog-mobile-filters summary { display: flex; align-items: center; gap: 9px; padding: 16px; color: #173d33; cursor: pointer; font-size: 12px; font-weight: 700; }
-  .catalog-mobile-filters summary svg { width: 17px; }
-  .catalog-mobile-filters .catalog-filter-grid { padding: 0 16px 18px; }
+  .catalog-single-filters { padding: 0; }
+  .catalog-filter-toggle { display: flex; width: 100%; align-items: center; gap: 9px; padding: 16px; color: #173d33; background: transparent; border: 0; cursor: pointer; font-size: 12px; font-weight: 700; }
+  .catalog-filter-toggle svg { width: 17px; }
+  .catalog-single-filters #catalog-filter-fields { display: none; }
+  .catalog-single-filters.open #catalog-filter-fields { display: block; padding: 0 16px 18px; }
   .catalog-filter-grid { grid-template-columns: 1fr; }
   .catalog-search, .catalog-checkbox { grid-column: auto; }
   .catalog-toolbar { align-items: flex-start; gap: 18px; }

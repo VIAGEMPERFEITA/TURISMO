@@ -18,6 +18,6 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({children}:{children:React.ReactNode}) {
-  const schema={"@context":"https://schema.org","@type":"TravelAgency",name:"Viagem Perfeita Turismo",url:"https://www.viagemperfeitaturismo.com.br",telephone:"+55 31 99954-7699",sameAs:["https://www.instagram.com/viagemperfeitatrip"]};
+  const schema={"@context":"https://schema.org","@type":"TravelAgency",name:"Viagem Perfeita Turismo",legalName:"VP TURISMO E EVENTOS",taxID:"28.279.846/0001-21",url:"https://www.viagemperfeitaturismo.com.br",telephone:"+55 31 99954-7699",sameAs:["https://www.instagram.com/viagemperfeitatrip","https://www.facebook.com/share/1JMzSa8Gxf/"]};
   return <html lang="pt-BR"><body><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}}/><WhatsAppContactProvider>{children}<WhatsAppFloating /></WhatsAppContactProvider></body></html>;
 }
