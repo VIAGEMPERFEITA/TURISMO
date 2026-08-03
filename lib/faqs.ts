@@ -12,4 +12,11 @@ export const generalFaqs:Array<[string,string]> = [
   ["Há suporte para mobilidade reduzida?","A acessibilidade depende de hotéis, veículos e locais visitados. Informe a necessidade antes de contratar para avaliação individual."],
   ["Como funciona o cancelamento?","Aplicam-se as condições do contrato, fornecedores e legislação. Leia as regras específicas antes de confirmar a reserva."],
   ["Posso embarcar de outra cidade?","A equipe pode avaliar conexões e trechos adicionais, sujeitos a disponibilidade e custo confirmado."],
+  ["Como funciona a hospedagem?","A categoria, os hotéis previstos e o regime de acomodação são apresentados na proposta de cada caravana. Alterações operacionais, quando necessárias, seguem as condições contratadas."],
+  ["Posso solicitar quarto individual?","Sim, quando houver disponibilidade. A acomodação individual normalmente possui condição própria, que deve ser consultada antes da reserva."],
+  ["É possível alterar o passageiro?","Qualquer substituição depende das regras das companhias aéreas, hotéis, fornecedores, prazos e condições contratuais da caravana."],
+  ["Existem reuniões preparatórias?","Quando previstas para a caravana, as reuniões orientam documentação, bagagem, pagamentos, dinâmica do grupo e detalhes do embarque."],
+  ["Quem acompanha a viagem?","A coordenação, os líderes e os guias de cada saída são informados na apresentação oficial da caravana."],
+  ["Quais documentos devo levar?","Além do passaporte e eventuais vistos, podem ser necessários comprovantes, autorizações e documentos sanitários. A relação final depende do roteiro e das regras vigentes."],
+  ["Como a segurança é tratada?","A operação considera orientações oficiais, fornecedores, logística e condições dos destinos. Informações relevantes são comunicadas ao grupo durante a preparação."],
 ];

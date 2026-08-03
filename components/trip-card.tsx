@@ -1,6 +1,7 @@
 import { ArrowRight, CalendarDays, Clock3, MapPin, Plane, UserRound } from "lucide-react";
 import Link from "next/link";
 import { formatTripPeriod, formatTripPrice, publicStatusLabels, type Trip } from "../lib/trips";
+import { WhatsAppLink } from "./whatsapp-link";
 
 export function TripCard({ trip }: { trip: Trip }) {
   return (
@@ -26,7 +27,7 @@ export function TripCard({ trip }: { trip: Trip }) {
           <span className="trip-discover">Ver detalhes <ArrowRight /></span>
         </div>
       </Link>
-      <Link className="trip-interest" href={`/caravanas/${trip.slug}#solicitacao`}>Tenho interesse</Link>
+      <WhatsAppLink className="trip-interest" tripName={trip.name} destination={trip.countries.join(" • ")} period={formatTripPeriod(trip)} duration={trip.days ? `${trip.days} dias${trip.nights ? ` · ${trip.nights} noites` : ""}` : undefined} status={publicStatusLabels[trip.publicStatus]} buttonText="Reservar minha vaga" initialInterest="Reservar vaga">Reservar minha vaga</WhatsAppLink>
     </article>
   );
 }
