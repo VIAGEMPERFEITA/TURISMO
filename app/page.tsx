@@ -1,20 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight, CalendarDays, Camera, ChevronDown, CircleCheck, Clock3, Globe2,
-  HeartHandshake, Menu, MessageCircle, Plane, Play, Quote,
-  ShieldCheck, Sparkles, Users, X
+  HeartHandshake, MessageCircle, Plane, Play, Quote,
+  ShieldCheck, Sparkles, Users
 } from "lucide-react";
 import { WhatsAppLink } from "../components/whatsapp-link";
 import { TripCard } from "../components/trip-card";
-import { CompanyLogo } from "../components/company-logo";
 import { RealJourneysGallery } from "../components/real-journeys-gallery";
-import { PublicFooter } from "../components/public-shell";
+import { PublicFooter, PublicHeader } from "../components/public-shell";
 import { publishedTrips } from "../lib/trips";
-import { publicNavigation, siteConfig } from "../lib/site-config";
+import { siteConfig } from "../lib/site-config";
 
 const destinations = [
   ["Israel", "Onde as Escrituras ganham vida", "https://images.unsplash.com/photo-1548018560-c7196548e84d?auto=format&fit=crop&w=900&q=80"],
@@ -36,23 +35,13 @@ const instagramTestimonials = [
 ];
 
 export default function Home() {
-  const [menu, setMenu] = useState(false);
   const [faq, setFaq] = useState(0);
   const [contactName, setContactName] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   const [contactDestination, setContactDestination] = useState("");
-  useEffect(()=>{document.body.classList.toggle("menu-open",menu);return()=>document.body.classList.remove("menu-open")},[menu]);
   return (
     <main id="inicio">
-      <header className="header">
-        <div className="nav shell"><CompanyLogo variant="dark" href="/" />
-          <nav id="home-main-navigation" className={menu ? "navlinks open" : "navlinks"} aria-label="Navegação principal">
-            {publicNavigation.map(([label,href])=><Link href={href} key={href} onClick={()=>setMenu(false)}>{label}</Link>)}
-          </nav>
-          <WhatsAppLink className="nav-cta" buttonText="Fale com um consultor"><MessageCircle size={17}/> Fale com um consultor</WhatsAppLink>
-          <button type="button" className="menu" onClick={() => setMenu(!menu)} aria-label={menu?"Fechar menu":"Abrir menu"} aria-expanded={menu} aria-controls="home-main-navigation">{menu ? <X/> : <Menu/>}</button>
-        </div>
-      </header>
+      <PublicHeader/>
 
       <section className="hero">
         <div className="hero-image" aria-hidden="true" />
