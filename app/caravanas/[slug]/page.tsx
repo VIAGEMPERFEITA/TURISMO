@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { ArrowLeft, BedDouble, CalendarDays, Check, Clock3, FileText, Globe2, MapPin, MessageCircle, Minus, Plane, ShieldCheck, UserRound } from "lucide-react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { TripFaq } from "../../../components/trip-faq";
 import { WhatsAppLink } from "../../../components/whatsapp-link";
 import { formatTripPeriod, formatTripPrice, getPublishedTripBySlug, publicStatusLabels, trips } from "../../../lib/trips";
+import { UnpublishedTripRedirect } from "../../../components/unpublished-trip-redirect";
 
 export const dynamicParams = false;
 
@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function TripPage({ params }: { params: Promise<{ slug: string }> }) {
   const trip = getPublishedTripBySlug((await params).slug);
-  if (!trip) notFound();
+  if (!trip) return <UnpublishedTripRedirect />;
 
   const period = formatTripPeriod(trip);
   const contact = { tripName: trip.name, destination: trip.primaryDestination, period };

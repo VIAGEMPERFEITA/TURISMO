@@ -1,0 +1,10 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
+const read=(path)=>readFile(new URL(`../${path}`,import.meta.url),"utf8");
+test("uses only the official WhatsApp number",async()=>{const files=await Promise.all([read("lib/company-contact.ts"),read("components/whatsapp-contact-provider.tsx"),read("components/whatsapp-floating.tsx")]);const joined=files.join("\n");assert.match(joined,/whatsappNumber: "5531999547699"/);assert.equal((joined.match(/whatsappNumber:/g)??[]).length,1)});
+test("does not expose draft trips in public collections",async()=>{const source=await read("lib/trips.ts");assert.match(source,/trip\.published && trip\.internalStatus === "pronto_para_publicar"/);assert.match(source,/noIndex: true/)});
+test("sitemap excludes admin and draft trips",async()=>{const source=await read("app/sitemap.ts");assert.doesNotMatch(source,/\/admin/);assert.match(source,/publishedTrips/);assert.doesNotMatch(source,/\btrips\.map/)});
+test("contact flow has consent and review",async()=>{const source=await read("components/whatsapp-contact-provider.tsx");assert.match(source,/Confira sua solicitação/);assert.match(source,/Política de privacidade/);assert.match(source,/Voltar e editar/);assert.match(source,/Continuar pelo WhatsApp/)});
+test("CRM migration enables RLS and deduplication",async()=>{const sql=await read("supabase/migrations/202608030001_crm_base.sql");assert.match(sql,/enable row level security/g);assert.match(sql,/upsert_public_lead/);assert.match(sql,/phone_normalized/);assert.match(sql,/private-documents/)});
+test("administrative pages are noindex",async()=>{const source=await read("app/admin/layout.tsx");assert.match(source,/index:false/);assert.match(source,/follow:false/)});

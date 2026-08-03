@@ -12,7 +12,7 @@ import { WhatsAppLink } from "../components/whatsapp-link";
 import { TripCard } from "../components/trip-card";
 import { CompanyLogo } from "../components/company-logo";
 import { RealJourneysGallery } from "../components/real-journeys-gallery";
-import { companyContact } from "../lib/company-contact";
+import { PublicFooter } from "../components/public-shell";
 import { featuredTrips } from "../lib/trips";
 
 const destinations = [
@@ -21,6 +21,7 @@ const destinations = [
   ["Grécia", "Pelos caminhos do apóstolo Paulo", "https://images.unsplash.com/photo-1504512485720-7d83a16ee930?auto=format&fit=crop&w=900&q=80"],
   ["Jordânia", "Desertos, promessas e contemplação", "https://images.unsplash.com/photo-1548786811-dd6e453ccca7?auto=format&fit=crop&w=900&q=80"],
 ];
+const destinationSlugs = ["israel", "egito", "grecia", "jordania"];
 
 const faqs = [
   ["Preciso ter experiência com viagens internacionais?", "Não. Nossa equipe acompanha você desde a documentação até o retorno ao Brasil. Antes do embarque, realizamos encontros de preparação e entregamos orientações claras para cada etapa."],
@@ -44,7 +45,7 @@ export default function Home() {
       <header className="header">
         <div className="nav shell"><CompanyLogo variant="dark" href="/#inicio" />
           <nav className={menu ? "navlinks open" : "navlinks"} aria-label="Navegação principal">
-            <a href="#caravanas">Caravanas</a><a href="#destinos">Destinos</a><a href="#sobre">Quem somos</a><a href="#historias">Histórias</a><a href="#contato">Contato</a>
+            <Link href="/caravanas">Caravanas</Link><Link href="/destinos">Destinos</Link><Link href="/quem-somos">Quem somos</Link><Link href="/historias">Histórias</Link><Link href="/caravanas-realizadas">Experiências</Link><Link href="/contato">Contato</Link>
           </nav>
           <WhatsAppLink className="nav-cta" buttonText="Fale com um consultor"><MessageCircle size={17}/> Fale com um consultor</WhatsAppLink>
           <button className="menu" onClick={() => setMenu(!menu)} aria-label="Abrir menu">{menu ? <X/> : <Menu/>}</button>
@@ -59,7 +60,7 @@ export default function Home() {
             <p className="eyebrow light"><Sparkles size={15}/> Turismo religioso premium</p>
             <h1>Mais que uma viagem.<br/><em>Um encontro</em> com a sua fé.</h1>
             <p className="hero-lead">Jornadas internacionais cuidadosamente planejadas para você viver o extraordinário com segurança, propósito e todo o cuidado.</p>
-            <div className="hero-actions"><a className="btn primary" href="#caravanas">Conheça as caravanas <ArrowRight size={18}/></a><a className="btn ghost" href="#sobre"><Play size={16} fill="currentColor"/> Nossa história</a></div>
+            <div className="hero-actions"><Link className="btn primary" href="/caravanas">Conheça as caravanas <ArrowRight size={18}/></Link><Link className="btn ghost" href="/quem-somos"><Play size={16} fill="currentColor"/> Nossa história</Link></div>
             <a className="hero-proof instagram-proof" href="https://www.instagram.com/viagemperfeitatrip" target="_blank" rel="noopener noreferrer" aria-label="Ver o Instagram da Viagem Perfeita Turismo"><Camera/><div><strong>Mais de 10 mil seguidores</strong><small>acompanham nossas jornadas no Instagram</small></div><ArrowRight/></a>
           </motion.div>
           <motion.aside initial={{opacity:0,x:30}} animate={{opacity:1,x:0}} transition={{delay:.2,duration:.7}} className="hero-card">
@@ -71,7 +72,7 @@ export default function Home() {
 
       <section className="intro section" id="sobre"><div className="shell intro-grid">
         <div><p className="eyebrow">Por que Viagem Perfeita</p><h2>A tranquilidade de ser cuidado.<br/><em>A emoção de se transformar.</em></h2></div>
-        <div className="intro-copy"><p>Acreditamos que uma grande viagem começa muito antes do embarque. Ela nasce na escuta, ganha forma nos detalhes e se torna inesquecível quando cada viajante se sente verdadeiramente acolhido.</p><a href="#contato">Conheça a nossa essência <ArrowRight/></a></div>
+        <div className="intro-copy"><p>Acreditamos que uma grande viagem começa muito antes do embarque. Ela nasce na escuta, ganha forma nos detalhes e se torna inesquecível quando cada viajante se sente verdadeiramente acolhido.</p><Link href="/quem-somos">Conheça a nossa essência <ArrowRight/></Link></div>
       </div>
       <div className="shell metrics"><div><strong>Cuidado</strong><span>em cada detalhe da jornada</span></div><div><strong>Clareza</strong><span>nas informações comerciais</span></div><div><strong>Presença</strong><span>antes, durante e depois</span></div><div><strong>Propósito</strong><span>em cada experiência</span></div></div>
       </section>
@@ -83,9 +84,9 @@ export default function Home() {
 
       <section className="experience section"><div className="shell experience-grid"><div className="experience-photo"><div className="floating-note"><Quote/><p>Cada informação publicada passa pela validação da equipe antes de chegar até você.</p><span>Compromisso Viagem Perfeita</span></div></div><div className="experience-copy"><p className="eyebrow light">O nosso jeito de cuidar</p><h2>Você vive a experiência.<br/><em>Nós cuidamos de tudo.</em></h2><p>Da primeira conversa ao abraço na volta, cada detalhe é pensado para que você viaje com leveza, confiança e presença.</p><ul><li><CircleCheck/>Roteiros com propósito e ritmo equilibrado</li><li><CircleCheck/>Informações comerciais apresentadas com clareza</li><li><CircleCheck/>Acompanhamento próximo em cada etapa</li><li><CircleCheck/>Orientação de documentos e preparação</li></ul><WhatsAppLink className="btn warm" buttonText="Solicitar orçamento">Solicitar orçamento <ArrowRight/></WhatsAppLink></div></div></section>
 
-      <RealJourneysGallery />
+      <RealJourneysGallery preview />
 
-      <section className="section destinations" id="destinos"><div className="shell"><div className="section-head"><div><p className="eyebrow">Destinos com significado</p><h2>O mundo é vasto.<br/>Escolhemos o que transforma.</h2></div><p className="side-copy">Lugares que carregam história, beleza e a força de experiências que permanecem para sempre.</p></div><div className="destination-grid">{destinations.map(([name,desc,img],i)=><WhatsAppLink buttonText={`Tenho interesse — ${name}`} className={`destination d${i}`} key={name} style={{backgroundImage:`linear-gradient(180deg,transparent 45%,rgba(7,24,20,.85)),url(${img})`}}><span>0{i+1}</span><div><h3>{name}</h3><p>{desc}</p></div><ArrowRight/></WhatsAppLink>)}</div></div></section>
+      <section className="section destinations" id="destinos"><div className="shell"><div className="section-head"><div><p className="eyebrow">Destinos com significado</p><h2>O mundo é vasto.<br/>Escolhemos o que transforma.</h2></div><Link className="text-link" href="/destinos">Conhecer todos os destinos <ArrowRight/></Link></div><div className="destination-grid">{destinations.map(([name,desc,img],i)=><Link href={`/destinos/${destinationSlugs[i]}`} className={`destination d${i}`} key={name} style={{backgroundImage:`linear-gradient(180deg,transparent 45%,rgba(7,24,20,.85)),url(${img})`}}><span>0{i+1}</span><div><h3>{name}</h3><p>{desc}</p></div><ArrowRight/></Link>)}</div></div></section>
 
       <section className="section stories" id="historias"><div className="shell"><div className="stories-heading"><div><p className="eyebrow">Experiências reais</p><h2>Quem viaja, volta com<br/><em>uma história para contar.</em></h2></div><p>Relatos públicos de pessoas que acompanharam experiências da Viagem Perfeita, preservados com sua origem para você conferir.</p></div><div className="testimonial-grid">{instagramTestimonials.map((testimonial)=><a className="testimonial-card" href={testimonial.url} target="_blank" rel="noopener noreferrer" key={testimonial.url}><Quote/><blockquote>“{testimonial.quote}”</blockquote><div><span><strong>{testimonial.author}</strong><small>{testimonial.context}</small></span><span className="testimonial-source"><Camera/> Ver no Instagram</span></div></a>)}</div><div className="instagram-community"><div><Camera/><span><strong>Acompanhe a Viagem Perfeita</strong><small>Israel, Europa e jornadas que unem história, cultura e fé.</small></span></div><a href="https://www.instagram.com/viagemperfeitatrip" target="_blank" rel="noopener noreferrer">@viagemperfeitatrip <ArrowRight/></a></div><p className="verified-content-note">Depoimentos extraídos de comentários públicos no perfil oficial. Grafia ajustada apenas para leitura, sem alterar o sentido.</p></div></section>
 
@@ -93,7 +94,7 @@ export default function Home() {
 
       <section className="cta" id="contato"><div className="cta-bg"/><div className="shell cta-content"><p className="eyebrow light">Sua próxima história começa aqui</p><h2>Qual é a viagem<br/>dos seus sonhos?</h2><p>Conte para a gente. Um especialista vai ouvir você e criar o melhor caminho para transformar esse sonho em realidade.</p><form onSubmit={e=>e.preventDefault()}><input aria-label="Seu nome" placeholder="Seu nome" value={contactName} onChange={e=>setContactName(e.target.value)}/><input aria-label="WhatsApp" placeholder="Seu WhatsApp" value={contactPhone} onChange={e=>setContactPhone(e.target.value)}/><select aria-label="Destino de interesse" value={contactDestination} onChange={e=>setContactDestination(e.target.value)}><option value="" disabled>Destino de interesse</option><option>Israel</option><option>Egito</option><option>Grécia e Turquia</option><option>Outro destino</option></select><WhatsAppLink className="btn warm" destination={contactDestination || undefined} initialLead={{name:contactName || undefined,phone:contactPhone || undefined}} buttonText="Quero viajar">Quero viajar <ArrowRight/></WhatsAppLink></form><small><ShieldCheck/> Seus dados estão seguros. Atendimento sem compromisso.</small></div></section>
 
-      <footer><div className="shell footer-grid"><div><CompanyLogo variant="dark" href="/#inicio"/><p>Viagens de fé. Experiências transformadoras.</p><a href="https://www.instagram.com/viagemperfeitatrip"><Globe2/> @viagemperfeitatrip</a></div><div><b>Explore</b><a href="#caravanas">Caravanas</a><a href="#destinos">Destinos</a><a href="#sobre">Quem somos</a><a href="#historias">Depoimentos</a></div><div><b>Planeje</b><WhatsAppLink buttonText="Fale conosco">Fale conosco</WhatsAppLink><a href="#">Documentação</a><a href="#">Dúvidas frequentes</a><a href="#">Blog de viagem</a></div><div><b>Atendimento</b><p>Segunda a sexta<br/>9h às 18h<br/>{companyContact.displayNumber}</p><WhatsAppLink buttonText="Atendimento pelo WhatsApp">Atendimento pelo WhatsApp</WhatsAppLink></div></div><div className="shell copyright"><span>© 2026 Viagem Perfeita Turismo</span><span>Privacidade · Termos</span></div></footer>
+      <PublicFooter />
     </main>
   );
 }

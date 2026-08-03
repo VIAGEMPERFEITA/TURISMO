@@ -1,0 +1,7 @@
+import type { Metadata } from "next";
+import { Building2, Church, HeartHandshake, Users } from "lucide-react";
+import { BasicContentPage } from "../../components/basic-content-page";
+import { WhatsAppLink } from "../../components/whatsapp-link";
+export const metadata:Metadata={title:"Viagens personalizadas | Viagem Perfeita Turismo",description:"Viagens sob medida para igrejas, famílias, ministérios, empresas e grupos fechados.",alternates:{canonical:"/viagens-personalizadas"}};
+const groups=[[Church,"Igrejas e ministérios"],[HeartHandshake,"Famílias e grupos de mulheres"],[Users,"Idosos e comunidades"],[Building2,"Empresas e grupos privativos"]] as const;
+export default function Page(){return <BasicContentPage eyebrow="Sob medida" title="Uma viagem criada para o seu grupo." description="Planejamento personalizado conforme propósito, perfil, ritmo, período e destinos desejados."><div className="value-grid">{groups.map(([Icon,title])=><div key={title}><Icon/><h3>{title}</h3><p>Roteiro estudado com escuta e informações comerciais confirmadas antes da contratação.</p></div>)}</div><section className="content-cta"><h2>Conte como é o seu grupo.</h2><p>Informe tipo de grupo, estimativa de viajantes, destinos, período e observações no formulário.</p><WhatsAppLink tripName="Viagem personalizada" destination="A definir" initialInterest="Solicitar proposta personalizada" buttonText="Solicitar proposta">Solicitar proposta</WhatsAppLink></section></BasicContentPage>}

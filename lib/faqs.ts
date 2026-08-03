@@ -1,0 +1,15 @@
+export const generalFaqs:Array<[string,string]> = [
+  ["Preciso ter experiência com viagens internacionais?","Não. A equipe orienta as etapas previstas na viagem confirmada, incluindo preparação e documentação geral."],
+  ["As caravanas têm acompanhamento em português?","A composição da coordenação e dos guias é informada na proposta oficial de cada caravana."],
+  ["Posso parcelar a viagem?","As condições variam por caravana e serão informadas somente após confirmação comercial."],
+  ["Qual validade o passaporte precisa ter?","A validade exigida depende dos países e conexões. Confirme nos canais oficiais e com a equipe antes da contratação e do embarque."],
+  ["Preciso de visto?","Depende do destino, nacionalidade, conexões e regras vigentes. A informação deve ser confirmada em fontes consulares oficiais."],
+  ["Existem vacinas obrigatórias?","Exigências sanitárias podem mudar. Consulte os órgãos oficiais de saúde e as regras de entrada perto da viagem."],
+  ["O seguro viagem é obrigatório?","A obrigatoriedade varia conforme o destino. A cobertura incluída ou recomendada constará na proposta oficial."],
+  ["Qual é a franquia de bagagem?","Companhia, tarifa e trecho determinam a franquia. Consulte a documentação final da passagem."],
+  ["As refeições estão incluídas?","Somente as refeições expressamente indicadas no roteiro e na proposta oficial."],
+  ["Pessoas idosas podem participar?","Sim, conforme condições pessoais e exigências do roteiro. Recomendamos avaliação médica e comunicação prévia de necessidades."],
+  ["Há suporte para mobilidade reduzida?","A acessibilidade depende de hotéis, veículos e locais visitados. Informe a necessidade antes de contratar para avaliação individual."],
+  ["Como funciona o cancelamento?","Aplicam-se as condições do contrato, fornecedores e legislação. Leia as regras específicas antes de confirmar a reserva."],
+  ["Posso embarcar de outra cidade?","A equipe pode avaliar conexões e trechos adicionais, sujeitos a disponibilidade e custo confirmado."],
+];

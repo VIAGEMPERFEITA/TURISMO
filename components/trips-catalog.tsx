@@ -4,6 +4,8 @@ import { Search, SlidersHorizontal, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import type { Trip, TripCategory, TripPublicStatus } from "../lib/trips";
 import { TripCard } from "./trip-card";
+import type { PlanningExperience } from "../lib/experiences";
+import { PlanningExperienceCard } from "./planning-experience-card";
 
 const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
@@ -14,7 +16,7 @@ const initialFilters = {
   departure: "", category: "", status: "", seats: false,
 };
 
-export function TripsCatalog({ trips }: { trips: Trip[] }) {
+export function TripsCatalog({ trips, planning = [] }: { trips: Trip[]; planning?: PlanningExperience[] }) {
   const [filters, setFilters] = useState(initialFilters);
   const [sort, setSort] = useState<SortKey>("nearest");
 
@@ -88,9 +90,10 @@ export function TripsCatalog({ trips }: { trips: Trip[] }) {
   return (
     <div className="catalog-browser">
       <details className="catalog-mobile-filters"><summary><SlidersHorizontal /> Filtros</summary>{filterFields}</details>
-      <div className="catalog-desktop-filters">{filterFields}</div>
+      {trips.length >= 4 ? <div className="catalog-desktop-filters">{filterFields}</div> : null}
       <div className="catalog-toolbar"><p><strong>{results.length}</strong> {results.length === 1 ? "caravana encontrada" : "caravanas encontradas"}</p><div><label htmlFor="catalog-sort">Ordenar por</label><select id="catalog-sort" value={sort} onChange={(event) => setSort(event.target.value as SortKey)}><option value="nearest">Saída mais próxima</option><option value="farthest">Saída mais distante</option><option value="duration">Duração</option><option value="name">Nome</option><option value="featured">Destaque</option></select><button type="button" onClick={() => setFilters(initialFilters)}><X /> Limpar filtros</button></div></div>
-      {results.length === 0 ? <div className="catalog-empty"><span>VP</span><h2>Nenhuma caravana publicada no momento.</h2><p>As próximas viagens aparecerão aqui somente após a confirmação oficial de datas, serviços e disponibilidade.</p></div> : Object.entries(grouped).map(([year, months]) => <section className="catalog-year" key={year}><h2>{year}</h2>{Object.entries(months).map(([month, monthTrips]) => <div className="catalog-month" key={month}><h3>{month}</h3><div className="catalog-grid">{monthTrips.map((trip) => <TripCard key={trip.id} trip={trip} />)}</div></div>)}</section>)}
+      {results.length === 0 ? <div className="catalog-empty"><span>VP</span><h2>Nenhuma caravana confirmada no momento.</h2><p>Datas, serviços e disponibilidade aparecerão aqui somente após validação oficial.</p></div> : Object.entries(grouped).map(([year, months]) => <section className="catalog-year" key={year}><h2>{year}</h2>{Object.entries(months).map(([month, monthTrips]) => <div className="catalog-month" key={month}><h3>{month}</h3><div className="catalog-grid">{monthTrips.map((trip) => <TripCard key={trip.id} trip={trip} />)}</div></div>)}</section>)}
+      {planning.length ? <section className="planning-catalog"><div className="planning-heading"><p className="eyebrow">Experiências em planejamento</p><h2>Cadastre seu interesse.</h2><p>Receba as datas primeiro. Nenhuma opção abaixo possui período, preço ou disponibilidade confirmados.</p></div><div className="catalog-grid">{planning.map((item)=><PlanningExperienceCard key={item.slug} experience={item}/>)}</div></section> : null}
     </div>
   );
 }

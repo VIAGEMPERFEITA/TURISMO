@@ -1,0 +1,7 @@
+import type { Metadata } from "next";
+import { Check } from "lucide-react";
+import { BasicContentPage } from "../../components/basic-content-page";
+import { WhatsAppLink } from "../../components/whatsapp-link";
+export const metadata:Metadata={title:"Líderes de caravanas | Viagem Perfeita Turismo",description:"Planejamento de grupos para pastores, igrejas, líderes, ministérios e parceiros.",alternates:{canonical:"/lideres-de-caravanas"}};
+const steps=["Entendimento do propósito e do perfil do grupo","Estudo de destino, período e ritmo","Construção e validação do roteiro","Comunicação clara com os participantes","Organização antes e durante a jornada","Acompanhamento comercial e operacional"];
+export default function Page(){return <BasicContentPage eyebrow="Líderes e grupos" title="Transforme um propósito em uma jornada bem organizada." description="Atendimento para pastores, igrejas, ministérios, cantores, comunidades e agências parceiras."><div className="leader-steps">{steps.map((s,i)=><div key={s}><span>{i+1}</span><p><Check/>{s}</p></div>)}</div><section className="content-cta"><h2>Solicite uma proposta para o seu grupo.</h2><p>Nenhuma gratuidade ou vantagem financeira é presumida; todas as condições são apresentadas na proposta oficial.</p><WhatsAppLink tripName="Grupo liderado" initialInterest="Solicitar proposta para líderes" buttonText="Solicitar proposta">Solicitar proposta</WhatsAppLink></section></BasicContentPage>}

@@ -18,30 +18,46 @@ export type WhatsAppLead = {
   phone?: string;
   email?: string;
   city?: string;
+  state?: string;
   travelers?: string;
   interest?: string;
+  desiredPeriod?: string;
+  accommodation?: string;
+  departureCity?: string;
+  paymentPreference?: string;
+  notes?: string;
+  groupType?: string;
+  consent?: boolean;
 };
 
 export type TripContactContext = {
   tripName?: string;
   destination?: string;
   period?: string;
+  pageUrl?: string;
 };
 
 export function createLeadWhatsAppMessage(lead: WhatsAppLead, trip: TripContactContext = {}) {
-  const lines = ["Olá!", "", "Conheci a Viagem Perfeita Turismo pelo site."];
-  if (trip.tripName || trip.destination || trip.period) lines.push("", "Tenho interesse na seguinte viagem:", "");
-  if (trip.tripName) lines.push("Caravana:", trip.tripName, "");
-  if (trip.destination) lines.push("Destino:", trip.destination, "");
-  if (trip.period) lines.push("Período:", trip.period, "");
-  if (lead.travelers) lines.push("Quantidade de viajantes:", lead.travelers, "");
-  if (lead.city) lines.push("Cidade de embarque:", lead.city, "");
-  if (lead.interest) lines.push("Interesse:", "", `- ${lead.interest}`, "");
-  const hasPersonalData = lead.name || lead.phone || lead.email;
-  if (hasPersonalData) lines.push("Dados do interessado:", "");
-  if (lead.name) lines.push("Nome:", lead.name);
-  if (lead.phone) lines.push("Telefone:", lead.phone);
-  if (lead.email) lines.push("E-mail:", lead.email);
-  lines.push("", "Gostaria de receber atendimento.");
+  const lines = ["Olá! Conheci a Viagem Perfeita Turismo pelo site e gostaria de receber atendimento."];
+  const page = trip.pageUrl || (typeof window !== "undefined" ? window.location.href : "");
+  if (trip.tripName || trip.destination || trip.period || lead.desiredPeriod || page) lines.push("", "EXPERIÊNCIA ESCOLHIDA");
+  if (trip.tripName) lines.push(`Viagem: ${trip.tripName}`);
+  if (trip.destination) lines.push(`Destino: ${trip.destination}`);
+  if (lead.desiredPeriod || trip.period) lines.push(`Período desejado: ${lead.desiredPeriod || trip.period}`);
+  if (page) lines.push(`Página: ${page}`);
+  if (lead.name || lead.phone || lead.email || lead.city || lead.state) lines.push("", "DADOS DO INTERESSADO");
+  if (lead.name) lines.push(`Nome: ${lead.name}`);
+  if (lead.phone) lines.push(`WhatsApp: ${lead.phone}`);
+  if (lead.email) lines.push(`E-mail: ${lead.email}`);
+  if (lead.city || lead.state) lines.push(`Cidade/UF: ${[lead.city, lead.state].filter(Boolean).join("/")}`);
+  if (lead.travelers || lead.accommodation || lead.departureCity || lead.paymentPreference || lead.interest || lead.groupType || lead.notes) lines.push("", "PREFERÊNCIAS");
+  if (lead.travelers) lines.push(`Quantidade de viajantes: ${lead.travelers}`);
+  if (lead.accommodation) lines.push(`Acomodação: ${lead.accommodation}`);
+  if (lead.departureCity) lines.push(`Cidade de embarque: ${lead.departureCity}`);
+  if (lead.paymentPreference) lines.push(`Pagamento desejado: ${lead.paymentPreference}`);
+  if (lead.groupType) lines.push(`Tipo de grupo: ${lead.groupType}`);
+  if (lead.interest) lines.push(`Interesse: ${lead.interest}`);
+  if (lead.notes) lines.push(`Observações: ${lead.notes}`);
+  lines.push("", "Gostaria de receber informações oficiais, valores e disponibilidade.");
   return lines.join("\n").replace(/\n{3,}/g, "\n\n");
 }

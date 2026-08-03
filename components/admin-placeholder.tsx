@@ -1,0 +1,1 @@
+export function AdminPlaceholder({title,description}:{title:string;description:string}){return <section className="crm-panel"><h2>{title}</h2><p>{description}</p><div className="crm-empty">O módulo está conectado à arquitetura e será preenchido somente com dados reais e permissões válidas.</div></section>}
