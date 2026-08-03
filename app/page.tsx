@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight, CalendarDays, ChevronDown, CircleCheck, Clock3, Globe2,
@@ -73,10 +74,10 @@ export default function Home() {
       </section>
 
       <section className="section trips-section" id="caravanas"><div className="shell">
-        <div className="section-head"><div><p className="eyebrow">Próximas jornadas</p><h2>Escolha onde sua fé<br/>vai te levar.</h2></div><a className="text-link" href="/caravanas">Ver todas as caravanas <ArrowRight/></a></div>
+        <div className="section-head"><div><p className="eyebrow">Próximas jornadas</p><h2>Escolha onde sua fé<br/>vai te levar.</h2></div><Link className="text-link" href="/caravanas">Ver todas as caravanas <ArrowRight/></Link></div>
         <div className="trip-grid">{featuredTrips.map((trip,i)=><motion.article initial={{opacity:0,y:20}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{delay:i*.1}} className="trip-card" key={trip.slug}>
-          <a className="trip-card-link" href={`/caravanas/${trip.slug}`} aria-label={`Ver detalhes de ${trip.title}`}><div className="trip-img" style={{backgroundImage:`linear-gradient(180deg,transparent 55%,rgba(5,23,19,.56)),url(${trip.image})`}}><span className="status demo">{trip.status}</span><span className="trip-place">{trip.destination}</span></div>
-          <div className="trip-body"><p>{trip.period}</p><h3>{trip.title}</h3><div className="trip-meta"><span><Clock3/> {trip.days}</span><span><Plane/> Saída de {trip.departure}</span></div><span className="trip-discover">Descobrir esta jornada <ArrowRight/></span></div></a>
+          <Link className="trip-card-link" href={`/caravanas/${trip.slug}`} aria-label={`Ver detalhes de ${trip.title}`}><div className="trip-img" style={{backgroundImage:`linear-gradient(180deg,transparent 55%,rgba(5,23,19,.56)),url(${trip.image})`}}><span className="status demo">{trip.status}</span><span className="trip-place">{trip.destination}</span></div>
+          <div className="trip-body"><p>{trip.period}</p><h3>{trip.title}</h3><div className="trip-meta"><span><Clock3/> {trip.days}</span><span><Plane/> Saída de {trip.departure}</span></div><span className="trip-discover">Descobrir esta jornada <ArrowRight/></span></div></Link>
         </motion.article>)}</div>
       </div></section>
 
