@@ -15,7 +15,7 @@ import { publishedTrips } from "../lib/trips";
 import { siteConfig } from "../lib/site-config";
 
 const destinations = [
-  ["Israel", "Onde as Escrituras ganham vida", "https://images.unsplash.com/photo-1548018560-c7196548e84d?auto=format&fit=crop&w=900&q=80"],
+  ["Israel", "Onde as Escrituras ganham vida", "https://images.unsplash.com/photo-1763966461585-41a652f12dd3?auto=format&fit=crop&w=2400&q=92"],
   ["Egito", "A origem de uma história milenar", "https://images.unsplash.com/photo-1568322445389-f64ac2515020?auto=format&fit=crop&w=900&q=80"],
   ["Grécia", "Pelos caminhos do apóstolo Paulo", "https://images.unsplash.com/photo-1504512485720-7d83a16ee930?auto=format&fit=crop&w=900&q=80"],
   ["Jordânia", "Desertos, promessas e contemplação", "https://images.unsplash.com/photo-1548786811-dd6e453ccca7?auto=format&fit=crop&w=900&q=80"],
@@ -34,7 +34,6 @@ const instagramTestimonials = [
 ];
 
 export default function Home() {
-  const basePath=process.env.NEXT_PUBLIC_BASE_PATH??"";
   const [faq, setFaq] = useState(0);
   const [contactName, setContactName] = useState("");
   const [contactPhone, setContactPhone] = useState("");
@@ -44,7 +43,7 @@ export default function Home() {
       <PublicHeader/>
 
       <section className="hero">
-        <img className="hero-image" src={`${basePath}/media/israel/monte-das-oliveiras.jpg`} width="480" height="269" alt="" fetchPriority="high" decoding="async" aria-hidden="true" />
+        <img className="hero-image" src="https://images.unsplash.com/photo-1763966461585-41a652f12dd3?auto=format&fit=crop&w=2400&q=92" width="2400" height="1600" alt="" fetchPriority="high" decoding="async" aria-hidden="true" />
         <div className="hero-shade" />
         <div className="hero-content shell">
           <div className="hero-copy">
