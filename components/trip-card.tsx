@@ -6,8 +6,9 @@ import { WhatsAppLink } from "./whatsapp-link";
 export function TripCard({ trip }: { trip: Trip }) {
   return (
     <article className="trip-card catalog-trip-card">
-      <Link className="trip-card-link" href={`/caravanas/${trip.slug}`} aria-label={`Ver detalhes de ${trip.name}`}>
-        <div className="trip-img" style={{ backgroundImage: `linear-gradient(180deg,transparent 48%,rgba(5,23,19,.7)),url(${trip.coverImage})` }}>
+      <Link className="trip-card-link" href={`/caravanas/${trip.slug}`}>
+        <div className="trip-img">
+          <img className="trip-cover" src={trip.coverImage} alt="" loading="lazy" decoding="async" />
           <span className={`status public-${trip.publicStatus}`}>{publicStatusLabels[trip.publicStatus]}</span>
           {trip.priority <= 2 ? <span className="priority-badge">Próxima saída</span> : null}
           <span className="trip-place">{trip.primaryDestination}</span>

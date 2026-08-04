@@ -1,6 +1,13 @@
 .footer-grid{grid-template-columns:repeat(4,1fr)!important}
 .footer-legal>div{justify-content:center!important;text-align:center}
-.whatsapp-card-icon img{width:40px;height:40px;display:block}
+.whatsapp-card{width:min(330px,calc(100vw - 24px));min-height:78px}
+.whatsapp-card-link{grid-template-columns:56px 1fr;gap:12px;padding:10px 42px 10px 10px}
+.whatsapp-card-icon{width:54px;height:54px;border-radius:10px}
+.whatsapp-card-icon img{width:31px;height:31px;display:block}
+.whatsapp-card-copy strong{font-size:17px}
+.whatsapp-card-copy small{font-size:13px;line-height:1.35}
+.whatsapp-card-close{top:8px;right:8px;width:28px;height:28px}
+.whatsapp-card-close svg{width:22px;height:22px}
 .back-to-top{position:fixed;z-index:44;right:28px;bottom:132px;width:46px;height:46px;display:grid;place-items:center;padding:0;color:#fff;background:#063858;border:1px solid rgba(255,255,255,.35);border-radius:50%;box-shadow:0 8px 24px rgba(4,42,68,.22);cursor:pointer;opacity:0;visibility:hidden;transform:translateY(12px);transition:opacity .25s ease,transform .25s ease,visibility .25s ease,background .2s ease}
 .back-to-top.visible{opacity:1;visibility:visible;transform:translateY(0)}
 .back-to-top:hover{background:#0b527d}
@@ -19,6 +26,22 @@
 .nav-dropdown-menu{position:absolute;z-index:60;top:calc(100% + 25px);left:50%;width:230px;display:grid;padding:10px 0;text-align:left;background:#fff;border-top:3px solid #063858;box-shadow:0 14px 32px rgba(6,56,88,.18);transform:translateX(-50%)}
 .site-header .navlinks .nav-dropdown-menu a{display:block;padding:11px 18px;color:#123f5b;font-size:11px;font-weight:700;text-transform:none;white-space:nowrap}
 .site-header .navlinks .nav-dropdown-menu a:hover{color:#fff;background:#063858}
+html,body{max-width:100%;overflow-x:clip}
+.hero-card h2{font:34px var(--serif);margin:0 0 20px;color:#fff;letter-spacing:0}
+.eyebrow{color:#865d2f}
+.eyebrow.light{color:#f2d6ad}
+.featured-intro{color:#50645b!important}
+.priority-badge{background:#8b531d!important}
+.trip-body>p{color:#76512f}
+.trip-meta{color:#53645d}
+.trip-img{overflow:hidden}
+.trip-cover{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+.trip-img>span{z-index:1}
+.destination>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+.destination:before{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,transparent 45%,rgba(7,24,20,.85))}
+.destination>span,.destination>div,.destination>svg{z-index:2}
+.destination:after{z-index:3}
+.hero>img.hero-image{width:100%;height:100%;object-fit:cover}
 
 @media(max-width:900px){
   .footer-grid{grid-template-columns:1fr 1fr!important}
@@ -30,6 +53,16 @@
 
 @media(max-width:620px){
   .footer-grid{grid-template-columns:1fr!important}
-  .whatsapp-card-icon img{width:32px;height:32px}
+  .hero>img.hero-image{display:none}
+  .hero{background:linear-gradient(145deg,#063858 0%,#0a5378 58%,#bd8c54 160%)}
+  .hero-card{width:100%;margin-left:0;margin-right:0}
+  .destination-grid{grid-template-columns:1fr!important;grid-template-rows:none!important}
+  .destination,.destination.d0,.destination.d3{grid-column:auto!important;grid-row:auto!important;min-height:250px}
+  .whatsapp-card{min-height:72px}
+  .whatsapp-card-link{grid-template-columns:50px 1fr;gap:10px;padding:9px 38px 9px 9px}
+  .whatsapp-card-icon{width:48px;height:48px}
+  .whatsapp-card-icon img{width:28px;height:28px}
+  .whatsapp-card-copy strong{font-size:15px}
+  .whatsapp-card-copy small{font-size:12px}
   .back-to-top{right:17px;bottom:108px;width:42px;height:42px}
 }

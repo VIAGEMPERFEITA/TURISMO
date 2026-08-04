@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight, CalendarDays, Camera, ChevronDown, CircleCheck, Clock3, Globe2,
   HeartHandshake, MessageCircle, Plane, Play, Quote,
@@ -35,6 +34,7 @@ const instagramTestimonials = [
 ];
 
 export default function Home() {
+  const basePath=process.env.NEXT_PUBLIC_BASE_PATH??"";
   const [faq, setFaq] = useState(0);
   const [contactName, setContactName] = useState("");
   const [contactPhone, setContactPhone] = useState("");
@@ -44,19 +44,19 @@ export default function Home() {
       <PublicHeader/>
 
       <section className="hero">
-        <div className="hero-image" aria-hidden="true" />
+        <img className="hero-image" src={`${basePath}/media/israel/monte-das-oliveiras.jpg`} width="480" height="269" alt="" fetchPriority="high" decoding="async" aria-hidden="true" />
         <div className="hero-shade" />
         <div className="hero-content shell">
-          <motion.div initial={{opacity:0,y:24}} animate={{opacity:1,y:0}} transition={{duration:.75}} className="hero-copy">
+          <div className="hero-copy">
             <p className="eyebrow light"><Sparkles size={15}/> Turismo religioso premium</p>
             <h1>Mais que uma viagem.<br/><em>Um encontro</em> com a sua fé.</h1>
             <p className="hero-lead">Jornadas internacionais cuidadosamente planejadas para você viver o extraordinário com segurança, propósito e todo o cuidado.</p>
             <div className="hero-actions"><Link className="btn primary" href="/caravanas">Conheça as caravanas <ArrowRight size={18}/></Link><Link className="btn ghost" href="/quem-somos"><Play size={16} fill="currentColor"/> Nossa história</Link></div>
-            <a className="hero-proof instagram-proof" href={siteConfig.instagram} target="_blank" rel="noopener noreferrer" aria-label="Ver o Instagram da Viagem Perfeita Turismo"><Camera/><div><strong>Mais de 10 mil seguidores</strong><small>acompanham nossas jornadas no Instagram</small></div><ArrowRight/></a>
-          </motion.div>
-          <motion.aside initial={{opacity:0,x:30}} animate={{opacity:1,x:0}} transition={{delay:.2,duration:.7}} className="hero-card">
-            <span className="live"><i/> Atendimento personalizado</span><p>Planeje com segurança</p><h3>Encontre sua próxima jornada</h3><div className="hero-meta"><span><CalendarDays/>Datas validadas</span><span><ShieldCheck/>Suporte próximo</span></div><div className="line"/><small>Receba somente informações oficiais da nossa equipe</small><WhatsAppLink buttonText="Falar com um consultor">Falar com um consultor <ArrowRight/></WhatsAppLink>
-          </motion.aside>
+            <a className="hero-proof instagram-proof" href={siteConfig.instagram} target="_blank" rel="noopener noreferrer"><Camera/><div><strong>Mais de 10 mil seguidores</strong><small>acompanham nossas jornadas no Instagram</small></div><ArrowRight/></a>
+          </div>
+          <aside className="hero-card">
+            <span className="live"><i/> Atendimento personalizado</span><p>Planeje com segurança</p><h2>Encontre sua próxima jornada</h2><div className="hero-meta"><span><CalendarDays/>Datas validadas</span><span><ShieldCheck/>Suporte próximo</span></div><div className="line"/><small>Receba somente informações oficiais da nossa equipe</small><WhatsAppLink buttonText="Falar com um consultor">Falar com um consultor <ArrowRight/></WhatsAppLink>
+          </aside>
         </div>
         <div className="trustbar shell"><span><ShieldCheck/>Assistência em cada etapa</span><span><Users/>Grupos cuidadosamente acompanhados</span><span><Globe2/>Curadoria internacional</span><span><HeartHandshake/>Atendimento humano</span></div>
       </section>
@@ -80,11 +80,11 @@ export default function Home() {
 
       <section className="section leaders-home"><div className="shell experience-grid"><div className="experience-copy"><p className="eyebrow">Pastores, líderes e grupos</p><h2>Monte sua própria<br/><em>caravana.</em></h2><p>Transformamos o propósito do seu grupo em uma jornada organizada, com criação de roteiro, apoio de divulgação, captação de interessados, reuniões preparatórias, operação e acompanhamento dos participantes.</p><ul><li><CircleCheck/>Igrejas, ministérios e comunidades</li><li><CircleCheck/>Cantores, grupos familiares e empresas</li><li><CircleCheck/>Atendimento próximo ao líder e aos viajantes</li></ul><Link className="btn primary" href="/lideres-de-caravanas">Conhecer o atendimento para líderes <ArrowRight/></Link></div><div className="leaders-home-panel"><Users/><p className="eyebrow light">Do propósito ao embarque</p><h3>Uma equipe ao lado do seu grupo em cada etapa.</h3><WhatsAppLink buttonText="Montar minha caravana" tripName="Caravana para grupo próprio" initialInterest="Solicitar proposta para líderes">Falar com um consultor <MessageCircle/></WhatsAppLink></div></div></section>
 
-      <section className="section destinations" id="destinos"><div className="shell"><div className="section-head"><div><p className="eyebrow">Destinos com significado</p><h2>O mundo é vasto.<br/>Escolhemos o que transforma.</h2></div><Link className="text-link" href="/destinos">Conhecer todos os destinos <ArrowRight/></Link></div><div className="destination-grid">{destinations.map(([name,desc,img],i)=><Link href={`/destinos/${destinationSlugs[i]}`} className={`destination d${i}`} key={name} style={{backgroundImage:`linear-gradient(180deg,transparent 45%,rgba(7,24,20,.85)),url(${img})`}}><span>0{i+1}</span><div><h3>{name}</h3><p>{desc}</p></div><ArrowRight/></Link>)}</div></div></section>
+      <section className="section destinations" id="destinos"><div className="shell"><div className="section-head"><div><p className="eyebrow">Destinos com significado</p><h2>O mundo é vasto.<br/>Escolhemos o que transforma.</h2></div><Link className="text-link" href="/destinos">Conhecer todos os destinos <ArrowRight/></Link></div><div className="destination-grid">{destinations.map(([name,desc,img],i)=><Link href={`/destinos/${destinationSlugs[i]}`} className={`destination d${i}`} key={name}><img src={img} alt="" loading="lazy" decoding="async"/><span>0{i+1}</span><div><h3>{name}</h3><p>{desc}</p></div><ArrowRight/></Link>)}</div></div></section>
 
       <section className="section stories" id="historias"><div className="shell"><div className="stories-heading"><div><p className="eyebrow">Experiências reais</p><h2>Quem viaja, volta com<br/><em>uma história para contar.</em></h2></div><p>Relatos públicos de pessoas que acompanharam experiências da Viagem Perfeita, preservados com sua origem para você conferir.</p></div><div className="testimonial-grid">{instagramTestimonials.map((testimonial)=><a className="testimonial-card" href={testimonial.url} target="_blank" rel="noopener noreferrer" key={testimonial.url}><Quote/><blockquote>“{testimonial.quote}”</blockquote><div><span><strong>{testimonial.author}</strong><small>{testimonial.context}</small></span><span className="testimonial-source"><Camera/> Ver no Instagram</span></div></a>)}</div><div className="instagram-community"><div><Camera/><span><strong>Acompanhe a Viagem Perfeita</strong><small>Israel, Europa e jornadas que unem história, cultura e fé.</small></span></div><a href="https://www.instagram.com/viagemperfeitatrip" target="_blank" rel="noopener noreferrer">@viagemperfeitatrip <ArrowRight/></a></div><p className="verified-content-note">Depoimentos extraídos de comentários públicos no perfil oficial. Grafia ajustada apenas para leitura, sem alterar o sentido.</p></div></section>
 
-      <section className="section faq"><div className="shell faq-grid"><div><p className="eyebrow">Antes de embarcar</p><h2>Suas dúvidas,<br/>respondidas com clareza.</h2><p>Nossa equipe está pronta para cuidar de tudo que você precisa.</p></div><div>{faqs.map(([q,a],i)=><div className="faq-item" key={q}><button onClick={()=>setFaq(faq===i?-1:i)}><span>{q}</span><ChevronDown className={faq===i?"rotate":""}/></button><AnimatePresence>{faq===i&&<motion.p initial={{height:0,opacity:0}} animate={{height:"auto",opacity:1}} exit={{height:0,opacity:0}}>{a}</motion.p>}</AnimatePresence></div>)}</div></div></section>
+      <section className="section faq"><div className="shell faq-grid"><div><p className="eyebrow">Antes de embarcar</p><h2>Suas dúvidas,<br/>respondidas com clareza.</h2><p>Nossa equipe está pronta para cuidar de tudo que você precisa.</p></div><div>{faqs.map(([q,a],i)=><div className="faq-item" key={q}><button aria-expanded={faq===i} onClick={()=>setFaq(faq===i?-1:i)}><span>{q}</span><ChevronDown className={faq===i?"rotate":""}/></button>{faq===i&&<p>{a}</p>}</div>)}</div></div></section>
 
       <section className="cta" id="contato"><div className="cta-bg"/><div className="shell cta-content"><p className="eyebrow light">Sua próxima história começa aqui</p><h2>Qual é a viagem<br/>dos seus sonhos?</h2><p>Conte para a gente. Um especialista vai ouvir você e criar o melhor caminho para transformar esse sonho em realidade.</p><form onSubmit={e=>e.preventDefault()}><input aria-label="Seu nome" placeholder="Seu nome" value={contactName} onChange={e=>setContactName(e.target.value)}/><input aria-label="WhatsApp" placeholder="Seu WhatsApp" value={contactPhone} onChange={e=>setContactPhone(e.target.value)}/><select aria-label="Destino de interesse" value={contactDestination} onChange={e=>setContactDestination(e.target.value)}><option value="" disabled>Destino de interesse</option><option>Israel</option><option>Egito</option><option>Grécia e Turquia</option><option>Outro destino</option></select><WhatsAppLink className="btn warm" destination={contactDestination || undefined} initialLead={{name:contactName || undefined,phone:contactPhone || undefined}} buttonText="Quero viajar">Quero viajar <ArrowRight/></WhatsAppLink></form><small><ShieldCheck/> Seus dados estão seguros. Atendimento sem compromisso.</small></div></section>
 
