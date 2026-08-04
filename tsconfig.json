@@ -30,5 +30,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "examples", "worker", "build", "vite.config.ts", "VIAGEM-PERFEITA-GITHUB", "VIAGEM-PERFEITA-GITHUB-PAGES"]
+  "exclude": ["node_modules", "examples", "worker", "build", "vite.config.ts", "supabase/functions", "VIAGEM-PERFEITA-GITHUB", "VIAGEM-PERFEITA-GITHUB-PAGES"]
 }
