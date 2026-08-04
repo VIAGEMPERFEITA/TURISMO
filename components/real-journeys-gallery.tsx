@@ -1,30 +1,31 @@
-import { Camera, MapPin } from "lucide-react";
+import { Camera, ExternalLink, MapPin } from "lucide-react";
 import Link from "next/link";
-import { LazyVideo } from "./lazy-video";
 
 const videos = [
-  { id: "jerusalem", title: "Caminhos de Jerusalém", description: "Ruas, história e fé vividas de perto por nossos grupos.", video: "jerusalem-experiencia.mp4", poster: "jerusalem-experiencia.jpg", vertical: true },
-  { id: "oliveiras", title: "Monte das Oliveiras", description: "Uma vista que conecta a Cidade Santa às histórias bíblicas.", video: "monte-das-oliveiras.mp4", poster: "monte-das-oliveiras.jpg", vertical: false },
-  { id: "bastidores", title: "Cuidado antes do embarque", description: "Organização e preparação da Viagem Perfeita para cada jornada.", video: "viagem-perfeita-bastidores.mp4", poster: "viagem-perfeita-bastidores.jpg", vertical: true },
+  { id: "DUlbDAglTVC", title: "Memórias de uma jornada especial", description: "Encontros e experiências vividas em grupo com a Viagem Perfeita." },
+  { id: "DNgArH1uAjP", title: "Fé que atravessa fronteiras", description: "Registros reais de uma caravana preparada com propósito e cuidado." },
+  { id: "DH1oUvsR7J_", title: "Caminhos que transformam", description: "Momentos marcantes compartilhados por nossos viajantes." },
+  { id: "DCFYAfkRavA", title: "Uma experiência para recordar", description: "Cultura, espiritualidade e convivência em cada etapa da viagem." },
+  { id: "DCARXV-xcHW", title: "Histórias vividas de perto", description: "A emoção das caravanas realizadas pela Viagem Perfeita." },
 ];
 
 export function RealJourneysGallery({ preview = false }: { preview?: boolean }) {
-  const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+  const visibleVideos = preview ? videos.slice(0, 2) : videos;
   return (
     <section className="section real-journeys" aria-labelledby="real-journeys-title">
       <div className="shell">
         <div className="section-head real-journeys-head">
           <div><p className="eyebrow"><Camera size={15}/> Caravanas realizadas</p><h2 id="real-journeys-title">Não contamos apenas destinos.<br/><em>Mostramos experiências reais.</em></h2></div>
-          <p className="side-copy">Registros produzidos durante viagens e atividades da própria Viagem Perfeita Turismo.</p>
+          <p className="side-copy">Vídeos publicados no Instagram oficial com registros das caravanas realizadas pela Viagem Perfeita Turismo.</p>
         </div>
         <div className={`journey-video-grid${preview ? " preview" : ""}`}>
-          {(preview ? videos.slice(0, 2) : videos).map((item) => <article className={item.vertical ? "journey-video vertical" : "journey-video"} key={item.id}>
-            <LazyVideo src={`${basePath}/media/israel/${item.video}`} poster={`${basePath}/media/israel/${item.poster}`} label={`${item.title}: vídeo completo de caravana realizada pela Viagem Perfeita`} orientation={item.vertical ? "vertical" : "horizontal"}/>
-            <div><span><MapPin/> Israel</span><h3>{item.title}</h3><p>{item.description}</p></div>
+          {visibleVideos.map((item) => <article className="journey-video instagram-reel-card" key={item.id}>
+            <div className="instagram-reel-frame"><iframe src={`https://www.instagram.com/reel/${item.id}/embed/`} title={`${item.title}: vídeo de caravana realizada pela Viagem Perfeita`} loading="lazy" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share" allowFullScreen /></div>
+            <div><span><MapPin/> Caravana realizada</span><h3>{item.title}</h3><p>{item.description}</p><a className="reel-external-link" href={`https://www.instagram.com/reel/${item.id}/`} target="_blank" rel="noopener noreferrer">Abrir no Instagram <ExternalLink/></a></div>
           </article>)}
         </div>
         {preview ? <Link className="journey-all-link" href="/caravanas-realizadas">Ver todas as experiências</Link> : null}
-        <p className="journey-authenticity">Conteúdo real fornecido pela Viagem Perfeita Turismo. Os vídeos são carregados somente quando você escolhe assistir.</p>
+        <p className="journey-authenticity">Conteúdo publicado no perfil oficial da Viagem Perfeita Turismo. Caso o Instagram bloqueie a reprodução incorporada, use “Abrir no Instagram”.</p>
       </div>
     </section>
   );
