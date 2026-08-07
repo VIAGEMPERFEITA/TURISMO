@@ -9,19 +9,22 @@ Deno.serve(async request => {
   if (!workerSecret || request.headers.get("x-worker-secret") !== workerSecret) return json({ error: "unauthorized" }, 401);
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const accessToken = Deno.env.get("META_WHATSAPP_ACCESS_TOKEN");
-  if (!supabaseUrl || !serviceKey || !accessToken) return json({ error: "service_unavailable" }, 503);
+  const fallbackAccessToken = Deno.env.get("META_WHATSAPP_ACCESS_TOKEN") || "";
+  if (!supabaseUrl || !serviceKey) return json({ error: "service_unavailable" }, 503);
   const admin = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
 
   const outboundId = clean((await request.json().catch(() => ({})))?.outboundId, 64);
   if (!outboundId) return json({ error: "outbound_id_required" }, 400);
   const { data: outbound, error } = await admin.from("whatsapp_outbound_messages")
-    .select("id,conversation_id,message_id,recipient_wa_id,payload,status,attempts,whatsapp_accounts!inner(phone_number_id,api_version,status)")
+    .select("id,conversation_id,message_id,recipient_wa_id,payload,status,attempts,whatsapp_accounts!inner(phone_number_id,api_version,status,token_secret_name)")
     .eq("id", outboundId).single();
   if (error || !outbound) return json({ error: "outbound_not_found" }, 404);
   if (["enviado", "entregue", "lido", "cancelado"].includes(outbound.status)) return json({ status: outbound.status, idempotent: true });
   const account: any = Array.isArray(outbound.whatsapp_accounts) ? outbound.whatsapp_accounts[0] : outbound.whatsapp_accounts;
   if (!account?.phone_number_id || !["teste", "ativo"].includes(account.status)) return json({ error: "account_not_active" }, 409);
+  const { data: vaultToken } = account.token_secret_name ? await admin.rpc("get_whatsapp_access_token", { target_secret_name: account.token_secret_name }) : { data: null };
+  const accessToken = clean(vaultToken, 4096) || fallbackAccessToken;
+  if (!accessToken) return json({ error: "access_token_missing" }, 503);
   if (outbound.attempts >= 5) return json({ error: "retry_limit_reached" }, 409);
 
   const claimed = await admin.from("whatsapp_outbound_messages").update({

@@ -1,0 +1,5 @@
+import test from "node:test";import assert from "node:assert/strict";import{readFileSync}from"node:fs";
+const component=readFileSync("components/admin-whatsapp-connection.tsx","utf8"),edge=readFileSync("supabase/functions/whatsapp-embedded-signup/index.ts","utf8"),migration=readFileSync("supabase/migrations/202608070003_whatsapp_embedded_signup.sql","utf8");
+test("embedded signup uses Meta configuration and coexistence",()=>{assert.match(component,/4336542926489080/);assert.match(component,/whatsapp_business_app_onboarding/);assert.match(component,/override_default_response_type/)});
+test("signup exchanges code only on the server and validates official phone",()=>{assert.match(edge,/oauth\/access_token/);assert.match(edge,/META_WHATSAPP_APP_SECRET/);assert.match(edge,/5531995285665/);assert.doesNotMatch(component,/META_WHATSAPP_APP_SECRET|access_token/)});
+test("access token is kept in Supabase Vault",()=>{assert.match(migration,/vault\.create_secret/);assert.match(migration,/vault\.decrypted_secrets/);assert.match(migration,/service_role/)});
