@@ -175,7 +175,8 @@ export function AdminWhatsAppConnection() {
 
     try {
       window.FB.login(
-        async (response) => {
+        (response) => {
+          void (async () => {
           const code = response.authResponse?.code;
           if (!code) {
             stopConnecting();
@@ -221,6 +222,7 @@ export function AdminWhatsAppConnection() {
           setMessage(
             "WhatsApp Business conectado em coexistência. O aplicativo do celular permanece ativo.",
           );
+          })();
         },
         {
           config_id: META_CONFIGURATION_ID,
