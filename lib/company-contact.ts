@@ -1,6 +1,6 @@
 export const companyContact = {
-  whatsappNumber: "5531999547699",
-  displayNumber: "(31) 99954-7699",
+  whatsappNumber: "5531995285665",
+  displayNumber: "(31) 99528-5665",
   defaultMessage:
     "Olá! Conheci a Viagem Perfeita Turismo pelo site e gostaria de receber mais informações sobre as viagens disponíveis.",
 } as const;

@@ -102,7 +102,7 @@ export function PublicHeader() {
         <div className="header-stack">
           <div className="header-top">
             <span>Central de atendimento</span>
-            <a href="tel:+5531999547699">(31) 99954-7699</a>
+            <a href="tel:+5531995285665">(31) 99528-5665</a>
             <span className="header-social-label">Acompanhe nossas redes</span>
             <nav aria-label="Redes sociais do cabeçalho">
               <a

@@ -54,6 +54,7 @@ Deno.serve(async request => {
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const workerSecret = Deno.env.get("WHATSAPP_WORKER_SECRET") || "";
   if (!supabaseUrl || !serviceKey) return json({ error: "service_unavailable" }, 503);
   const admin = createClient(supabaseUrl, serviceKey, { auth: { persistSession: false } });
 
@@ -179,7 +180,7 @@ Deno.serve(async request => {
             reply_to_external_message_id: clean(message?.context?.id, 256) || null,
             metadata: { media_id: content.mediaId, raw_type: message?.type },
             sent_at: providerTimestamp,
-          });
+          }).select("id").single();
           if (inserted.error) throw inserted.error;
           await admin.from("conversations").update({
             last_customer_message_at: providerTimestamp,
@@ -188,6 +189,25 @@ Deno.serve(async request => {
             updated_at: new Date().toISOString(),
           }).eq("id", conversation.id);
           await admin.from("webhook_events").update({ status: "processado", processed_at: new Date().toISOString() }).eq("id", claimedEvent.id);
+
+          if (workerSecret && inserted.data?.id) {
+            const orchestration = fetch(`${supabaseUrl}/functions/v1/whatsapp-ai-orchestrator`, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${serviceKey}`,
+                apikey: serviceKey,
+                "x-worker-secret": workerSecret,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                conversationId: conversation.id,
+                sourceMessageId: inserted.data.id,
+              }),
+            }).catch(() => undefined);
+            const edgeRuntime = (globalThis as any).EdgeRuntime;
+            if (edgeRuntime?.waitUntil) edgeRuntime.waitUntil(orchestration);
+            else void orchestration;
+          }
         } catch (error) {
           await admin.from("webhook_events").update({
             status: "falhou",
