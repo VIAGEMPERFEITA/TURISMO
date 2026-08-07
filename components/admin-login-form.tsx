@@ -1,5 +1,33 @@
 "use client";
+
 import { useState } from "react";
 import { KeyRound, LogIn, Mail } from "lucide-react";
 import { getSupabaseBrowserClient } from "../lib/supabase-client";
-export function AdminLoginForm(){const[email,setEmail]=useState("");const[password,setPassword]=useState("");const[message,setMessage]=useState("");const base=process.env.NEXT_PUBLIC_BASE_PATH??"";async function login(e:React.FormEvent){e.preventDefault();const s=getSupabaseBrowserClient();if(!s){setMessage("Conecte o Supabase pelas variáveis de ambiente para ativar o CRM.");return}const{error}=await s.auth.signInWithPassword({email,password});if(error){setMessage("Acesso não autorizado ou credenciais inválidas.");return}window.location.href=`${base}/admin/dashboard/`}async function recover(){const s=getSupabaseBrowserClient();if(!s||!email){setMessage("Informe o e-mail e conecte o Supabase.");return}const{error}=await s.auth.resetPasswordForEmail(email,{redirectTo:`${window.location.origin}${base}/admin/login/`});setMessage(error?"Não foi possível solicitar a recuperação.":"Verifique seu e-mail para redefinir a senha.")}return <form className="admin-login-card" onSubmit={login}><div className="admin-login-brand">VP</div><p>Área protegida</p><h1>CRM Viagem Perfeita</h1><label><Mail/>E-mail<input type="email" required value={email} onChange={e=>setEmail(e.target.value)}/></label><label><KeyRound/>Senha<input type="password" required value={password} onChange={e=>setPassword(e.target.value)}/></label>{message?<div className="admin-message">{message}</div>:null}<button type="submit"><LogIn/>Entrar</button><button type="button" className="recover" onClick={recover}>Esqueci minha senha</button></form>}
+
+export function AdminLoginForm() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
+  const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
+  async function login(event: React.FormEvent) {
+    event.preventDefault();
+    const client = getSupabaseBrowserClient();
+    if (!client) return setMessage("A autenticação ainda não foi conectada ao Supabase.");
+    const { error } = await client.auth.signInWithPassword({
+      email: email.trim().toLowerCase(),
+      password,
+    });
+    if (error) return setMessage("Acesso não autorizado ou credenciais inválidas.");
+    window.location.href = `${base}/admin/dashboard/`;
+  }
+
+  return <form className="admin-login-card" onSubmit={login}>
+    <div className="admin-login-brand">VP</div><p>Área protegida</p><h1>CRM Viagem Perfeita</h1>
+    <label><Mail/>E-mail<input type="email" required autoComplete="email" value={email} onChange={event => setEmail(event.target.value)}/></label>
+    <label><KeyRound/>Senha<input type="password" required minLength={8} autoComplete="current-password" value={password} onChange={event => setPassword(event.target.value)}/></label>
+    {message ? <div className="admin-message" role="alert">{message}</div> : null}
+    <button type="submit"><LogIn/>Entrar</button>
+    <button type="button" className="recover" onClick={() => window.location.href = `${base}/admin/recuperar-senha/`}>Esqueci minha senha</button>
+  </form>;
+}
