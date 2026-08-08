@@ -17,6 +17,11 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
   alternates: { canonical: "/" },
   icons: { icon: "/brand/logo-light.jpg", apple: "/brand/logo-light.jpg" },
+  verification: {
+    other: {
+      "facebook-domain-verification": "vc4g7p9chy10sgqatzvzrzm7e93qfn",
+    },
+  },
 };
 
 export default function RootLayout({children}:{children:React.ReactNode}) {
