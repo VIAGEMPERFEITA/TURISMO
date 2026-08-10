@@ -64,11 +64,22 @@ Regras obrigatórias:
 
 const json = (body: unknown, status = 200, headers: HeadersInit = {}) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json", ...headers } });
 const clean = (value: unknown, max = 1000) => typeof value === "string" ? value.trim().slice(0, max) : "";
-const responseText = (response: any) => clean(response?.output_text, 2200) || clean((response?.output || [])
-  .filter((item: any) => item.type === "message")
-  .flatMap((item: any) => item.content || [])
-  .filter((item: any) => item.type === "output_text")
-  .map((item: any) => item.text)
+type ResponseContent = { type?: string; text?: string };
+type ResponseOutput = { type?: string; content?: ResponseContent[]; name?: string; arguments?: string; call_id?: string };
+type OpenAIResponse = {
+  id?: string;
+  model?: string;
+  output_text?: string;
+  output?: ResponseOutput[];
+  usage?: { input_tokens?: number; output_tokens?: number };
+};
+type ConversationHistory = { direction?: string; body?: string };
+type KnowledgeResult = { title?: string; category?: string; content?: string; source?: string; source_url?: string; version?: string };
+const responseText = (response: OpenAIResponse | null) => clean(response?.output_text, 2200) || clean((response?.output || [])
+  .filter(item => item.type === "message")
+  .flatMap(item => item.content || [])
+  .filter(item => item.type === "output_text")
+  .map(item => item.text)
   .join("\n"), 2200);
 
 async function sha256(value: string) {
@@ -139,7 +150,7 @@ Deno.serve(async request => {
         conversationId = created.id;
       }
       const { data: history } = await admin.from("messages").select("direction,body,sent_at").eq("conversation_id", conversationId).in("direction", ["entrada", "saida"]).not("body", "is", null).order("sent_at", { ascending: false }).limit(10);
-      historyInput = (history || []).reverse().map((item: any) => ({ role: item.direction === "entrada" ? "user" as const : "assistant" as const, content: clean(item.body, 1200) }));
+      historyInput = ((history || []) as ConversationHistory[]).reverse().map(item => ({ role: item.direction === "entrada" ? "user" as const : "assistant" as const, content: clean(item.body, 1200) }));
       await admin.from("messages").insert({ conversation_id: conversationId, direction: "entrada", message_type: "texto", body: message, metadata: { source: "ai_assistant" } });
     }
 
@@ -156,7 +167,7 @@ Deno.serve(async request => {
     const enabledToolNames = new Set((config.allowed_tools || []).map(String));
     const enabledTools = tools.filter(tool => enabledToolNames.has(tool.name));
     let input: unknown[] = [...historyInput, { role: "user", content: message }];
-    let response: any = null;
+    let response: OpenAIResponse | null = null;
     let handoff = false;
 
     for (let iteration = 0; iteration < 4; iteration += 1) {
@@ -183,7 +194,7 @@ Deno.serve(async request => {
       }
       response = await apiResponse.json();
       input.push(...(response.output || []));
-      const calls = (response.output || []).filter((item: any) => item.type === "function_call");
+      const calls = (response.output || []).filter(item => item.type === "function_call");
       if (!calls.length) break;
 
       for (const call of calls) {
@@ -194,7 +205,7 @@ Deno.serve(async request => {
           if (call.name === "search_authorized_knowledge" && enabledToolNames.has(call.name)) {
             const { data, error } = await admin.rpc("search_authorized_knowledge", { search_text: clean(args.query, 160), external_only: true });
             if (error) throw error;
-            toolOutput = (data || []).slice(0, 8).map((item: any) => ({ title: item.title, category: item.category, content: clean(item.content, 1800), source: item.source, source_url: item.source_url, version: item.version }));
+            toolOutput = ((data || []) as KnowledgeResult[]).slice(0, 8).map(item => ({ title: item.title, category: item.category, content: clean(item.content, 1800), source: item.source, source_url: item.source_url, version: item.version }));
             success = true;
           } else if (call.name === "search_public_caravans" && enabledToolNames.has(call.name)) {
             let query = admin.from("caravans").select("name,slug,destination,departure_date,return_date,month,year,status_public,available_spots,duration_days,departure_city,countries,short_description").eq("organization_id", organizationId).eq("published", true).eq("status_internal", "confirmada").is("archived_at", null).order("year", { ascending: true }).order("month", { ascending: true }).limit(12);

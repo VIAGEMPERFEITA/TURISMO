@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 const clean = (value: unknown, max = 4096) => typeof value === "string" ? value.trim().slice(0, max) : "";
+type WhatsAppAccount = { phone_number_id?: string; api_version?: string; status?: string; token_secret_name?: string };
 
 Deno.serve(async request => {
   if (request.method !== "POST") return json({ error: "method_not_allowed" }, 405);
@@ -20,7 +21,7 @@ Deno.serve(async request => {
     .eq("id", outboundId).single();
   if (error || !outbound) return json({ error: "outbound_not_found" }, 404);
   if (["enviado", "entregue", "lido", "cancelado"].includes(outbound.status)) return json({ status: outbound.status, idempotent: true });
-  const account: any = Array.isArray(outbound.whatsapp_accounts) ? outbound.whatsapp_accounts[0] : outbound.whatsapp_accounts;
+  const account = (Array.isArray(outbound.whatsapp_accounts) ? outbound.whatsapp_accounts[0] : outbound.whatsapp_accounts) as WhatsAppAccount | null;
   if (!account?.phone_number_id || !["teste", "ativo"].includes(account.status)) return json({ error: "account_not_active" }, 409);
   const { data: vaultToken } = account.token_secret_name ? await admin.rpc("get_whatsapp_access_token", { target_secret_name: account.token_secret_name }) : { data: null };
   const accessToken = clean(vaultToken, 4096) || fallbackAccessToken;

@@ -6,6 +6,17 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
 });
 const clean = (value: unknown, max = 2000) => typeof value === "string" ? value.trim().slice(0, max) : "";
 const digits = (value: unknown) => clean(value, 32).replace(/\D/g, "");
+type WhatsAppMessage = Record<string, unknown> & {
+  type?: string;
+  text?: { body?: string };
+  button?: { text?: string };
+  interactive?: { button_reply?: { title?: string }; list_reply?: { title?: string } };
+  image?: { caption?: string; id?: string };
+  video?: { caption?: string; id?: string };
+  audio?: { caption?: string; id?: string };
+  document?: { caption?: string; id?: string };
+};
+type WhatsAppContact = { wa_id?: string; profile?: { name?: string } };
 
 async function validSignature(rawBody: string, signature: string, secret: string) {
   if (!signature.startsWith("sha256=") || !secret) return false;
@@ -18,7 +29,7 @@ async function validSignature(rawBody: string, signature: string, secret: string
   return mismatch === 0;
 }
 
-function messageContent(message: any) {
+function messageContent(message: WhatsAppMessage) {
   const type = clean(message?.type, 32) || "texto";
   if (type === "text") return { type: "texto", body: clean(message?.text?.body, 4096), mediaId: null };
   if (type === "button") return { type: "texto", body: clean(message?.button?.text, 4096), mediaId: null };
@@ -30,8 +41,8 @@ function messageContent(message: any) {
   const mapped: Record<string, string> = { image: "imagem", video: "video", audio: "audio", document: "documento" };
   return {
     type: mapped[type] || "sistema",
-    body: clean(message?.[type]?.caption || `[${type}]`, 4096),
-    mediaId: clean(message?.[type]?.id, 256) || null,
+    body: clean((message[type] as { caption?: string } | undefined)?.caption || `[${type}]`, 4096),
+    mediaId: clean((message[type] as { id?: string } | undefined)?.id, 256) || null,
   };
 }
 
@@ -123,7 +134,7 @@ Deno.serve(async request => {
         if (claimError || !claimedEvent) continue;
 
         try {
-          const contact = (value.contacts || []).find((item: any) => digits(item?.wa_id) === waId);
+          const contact = (value.contacts || []).find((item: WhatsAppContact) => digits(item?.wa_id) === waId);
           const contactName = clean(contact?.profile?.name, 160) || `WhatsApp ${waId.slice(-4)}`;
           let { data: lead } = await admin.from("leads").select("id").eq("organization_id", account.organization_id).eq("phone_normalized", waId).is("deleted_at", null).order("created_at", { ascending: false }).limit(1).maybeSingle();
           if (!lead) {
@@ -165,7 +176,7 @@ Deno.serve(async request => {
             conversation = created.data;
           }
 
-          const content = messageContent(message);
+          const content = messageContent(message as WhatsAppMessage);
           const providerTimestamp = message?.timestamp ? new Date(Number(message.timestamp) * 1000).toISOString() : new Date().toISOString();
           const inserted = await admin.from("messages").insert({
             conversation_id: conversation.id,
