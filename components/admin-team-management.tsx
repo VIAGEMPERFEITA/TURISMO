@@ -45,14 +45,18 @@ export function AdminTeamManagement() {
     if (!client) return;
     const values = new FormData(event.currentTarget);
     setBusy(true); setMessage("");
-    const { error } = await client.rpc("invite_organization_member", {
-      target_email: String(values.get("email") ?? ""),
-      target_role: String(values.get("role") ?? "consultor"),
+    const { data, error } = await client.functions.invoke("invite-organization-member", {
+      body: {
+        email: String(values.get("email") ?? ""),
+        role: String(values.get("role") ?? "consultor"),
+      },
     });
     setBusy(false);
     if (error) { setMessage(error.message); return; }
     event.currentTarget.reset();
-    setMessage("Convite criado. O usuário será vinculado a esta empresa quando confirmar o cadastro.");
+    setMessage(data?.linkedExistingUser
+      ? "Usuário existente vinculado à empresa com sucesso."
+      : "Convite enviado por e-mail. O acesso será ativado após a confirmação.");
     await load();
   }
 
