@@ -41,9 +41,10 @@ export function AdminTeamManagement() {
 
   async function invite(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = event.currentTarget;
     const client = getSupabaseBrowserClient();
     if (!client) return;
-    const values = new FormData(event.currentTarget);
+    const values = new FormData(form);
     setBusy(true); setMessage("");
     const { data, error } = await client.functions.invoke("invite-organization-member", {
       body: {
@@ -53,7 +54,7 @@ export function AdminTeamManagement() {
     });
     setBusy(false);
     if (error) { setMessage(error.message); return; }
-    event.currentTarget.reset();
+    form.reset();
     setMessage(data?.linkedExistingUser
       ? "Usuário existente vinculado à empresa com sucesso."
       : "Convite enviado por e-mail. O acesso será ativado após a confirmação.");
@@ -62,9 +63,10 @@ export function AdminTeamManagement() {
 
   async function createTenant(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const form = event.currentTarget;
     const client = getSupabaseBrowserClient();
     if (!client) return;
-    const values = new FormData(event.currentTarget);
+    const values = new FormData(form);
     setBusy(true); setMessage("");
     const { error } = await client.rpc("create_tenant_organization", {
       tenant_name: String(values.get("name") ?? ""),
@@ -78,7 +80,7 @@ export function AdminTeamManagement() {
     });
     setBusy(false);
     if (error) { setMessage(error.message); return; }
-    event.currentTarget.reset();
+    form.reset();
     setMessage("Empresa criada com pipeline, fila e convite do administrador.");
     await load();
   }
