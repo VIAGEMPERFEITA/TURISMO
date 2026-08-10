@@ -47,6 +47,7 @@ export function AdminWhatsAppConnection() {
   const [sdkReady, setSdkReady] = useState(false);
   const [sdkError, setSdkError] = useState(false);
   const [connecting, setConnecting] = useState(false);
+  const [testing, setTesting] = useState(false);
   const [message, setMessage] = useState("");
   const [connected, setConnected] = useState(false);
   const signupSession = useRef<SignupSession | null>(null);
@@ -243,6 +244,28 @@ export function AdminWhatsAppConnection() {
     }
   }
 
+  async function testMetaConnection() {
+    if (testing) return;
+    const client = getSupabaseBrowserClient();
+    if (!client) {
+      setMessage("Supabase não configurado.");
+      return;
+    }
+    setTesting(true);
+    setMessage("");
+    const { data, error } = await client.functions.invoke("meta-management-test", {
+      body: {},
+    });
+    setTesting(false);
+    if (error || !data?.ok) {
+      setMessage("A Meta não confirmou a conexão de gerenciamento. Verifique o token e tente novamente.");
+      return;
+    }
+    setMessage(
+      `Conexão de gerenciamento confirmada pela Meta (${data.count ?? 0} número(s) localizado(s)).`,
+    );
+  }
+
   return (
     <div className="crm-report-grid whatsapp-connection-grid">
       <section className="crm-panel">
@@ -280,6 +303,14 @@ export function AdminWhatsAppConnection() {
                 : sdkReady
                   ? "Conectar WhatsApp Business"
                   : "Carregando Meta…"}
+        </button>
+        <button
+          className="crm-secondary whatsapp-connect-button"
+          onClick={testMetaConnection}
+          disabled={testing}
+        >
+          {testing ? <LoaderCircle className="spin" /> : <RefreshCw />}
+          {testing ? "Testando conexão…" : "Testar conexão de gerenciamento"}
         </button>
         {message ? (
           <div className="crm-alert" role="status" aria-live="polite">
