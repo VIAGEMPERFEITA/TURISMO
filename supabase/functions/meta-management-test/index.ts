@@ -48,29 +48,34 @@ Deno.serve(async (request) => {
     .limit(1)
     .maybeSingle();
 
-  // The test WABA is used only until the official number finishes Embedded Signup.
-  const wabaId = account?.waba_id || "1077957561405552";
-  const response = await fetch(
-    `https://graph.facebook.com/v25.0/${wabaId}/phone_numbers?fields=id,display_phone_number,verified_name,quality_rating`,
-    { headers: { Authorization: `Bearer ${metaAccessToken}` } },
-  );
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    return json(
-      {
-        error: "meta_management_call_failed",
-        status: response.status,
-        metaCode: result.error?.code,
-        metaType: result.error?.type,
-      },
-      502,
+  // The test WABA remains an authorized fallback until Embedded Signup returns
+  // the definitive account. Trying both avoids a stale CRM record blocking the
+  // permission validation required by Meta App Review.
+  const candidates = [...new Set([account?.waba_id, "1077957561405552"].filter(Boolean))];
+  const attempts: Array<{ status: number; metaCode?: number; metaType?: string }> = [];
+
+  for (const wabaId of candidates) {
+    const response = await fetch(
+      `https://graph.facebook.com/v25.0/${wabaId}/phone_numbers?fields=id,display_phone_number,verified_name,quality_rating`,
+      { headers: { Authorization: `Bearer ${metaAccessToken}` } },
     );
+    const result = await response.json().catch(() => ({}));
+    if (response.ok) {
+      return json({
+        ok: true,
+        status: response.status,
+        count: Array.isArray(result.data) ? result.data.length : 0,
+        checkedAt: new Date().toISOString(),
+      });
+    }
+
+    attempts.push({
+      status: response.status,
+      metaCode: result.error?.code,
+      metaType: result.error?.type,
+    });
   }
 
-  return json({
-    ok: true,
-    status: response.status,
-    count: Array.isArray(result.data) ? result.data.length : 0,
-    checkedAt: new Date().toISOString(),
-  });
+  console.error("meta-management-test failed", attempts);
+  return json({ error: "meta_management_call_failed", attempts }, 502);
 });
