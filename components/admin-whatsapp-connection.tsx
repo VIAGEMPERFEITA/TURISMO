@@ -50,6 +50,7 @@ export function AdminWhatsAppConnection() {
   const [testing, setTesting] = useState(false);
   const [message, setMessage] = useState("");
   const [connected, setConnected] = useState(false);
+  const [displayPhone, setDisplayPhone] = useState("Nenhum número conectado");
   const signupSession = useRef<SignupSession | null>(null);
   const loginTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -115,8 +116,9 @@ export function AdminWhatsAppConnection() {
     const client = getSupabaseBrowserClient();
     client
       ?.from("whatsapp_accounts")
-      .select("status,coexistence_enabled")
-      .eq("phone_e164", "5531995285665")
+      .select("status,coexistence_enabled,display_phone")
+      .order("updated_at", { ascending: false })
+      .limit(1)
       .maybeSingle()
       .then(({ data, error }) => {
         if (error) {
@@ -124,6 +126,7 @@ export function AdminWhatsAppConnection() {
           return;
         }
         setConnected(Boolean(data?.coexistence_enabled && data?.status === "ativo"));
+        if (data?.display_phone) setDisplayPhone(data.display_phone);
       });
 
     const onMessage = (event: MessageEvent) => {
@@ -220,6 +223,7 @@ export function AdminWhatsAppConnection() {
             return;
           }
           setConnected(true);
+          if (data.displayPhone) setDisplayPhone(data.displayPhone);
           setMessage(
             "WhatsApp Business conectado em coexistência. O aplicativo do celular permanece ativo.",
           );
@@ -278,7 +282,7 @@ export function AdminWhatsAppConnection() {
         </div>
         <div className={`whatsapp-connection-status ${connected ? "connected" : "pending"}`}>
           <strong>{connected ? "Conectado em coexistência" : "Aguardando conexão"}</strong>
-          <span>(31) 99528-5665</span>
+          <span>{displayPhone}</span>
         </div>
         <button
           className="crm-primary whatsapp-connect-button"
