@@ -28,7 +28,7 @@ export function TripCard({ trip }: { trip: Trip }) {
           <span className="trip-discover">Ver detalhes <ArrowRight /></span>
         </div>
       </Link>
-      <WhatsAppLink className="trip-interest" tripName={trip.name} destination={trip.countries.join(" • ")} period={formatTripPeriod(trip)} duration={trip.days ? `${trip.days} dias${trip.nights ? ` · ${trip.nights} noites` : ""}` : undefined} status={publicStatusLabels[trip.publicStatus]} buttonText="Reservar minha vaga" initialInterest="Reservar vaga">Reservar minha vaga</WhatsAppLink>
+      <WhatsAppLink className="trip-interest" tripName={trip.name} destination={trip.countries.join(" • ")} period={formatTripPeriod(trip)} duration={trip.days ? `${trip.days} dias${trip.nights ? ` · ${trip.nights} noites` : ""}` : undefined} status={publicStatusLabels[trip.publicStatus]} buttonText="Receber valores" initialInterest="Receber valores e condições">Receber valores e condições</WhatsAppLink>
     </article>
   );
 }
