@@ -29,6 +29,7 @@ const moduleRoles: Record<string, readonly CrmRole[]> = {
   ia: ["administrador", "gestor"],
   "ia-logs": ["administrador", "gestor"],
   "ia-configuracoes": ["administrador", "gestor"],
+  "ia-simulador": ["administrador", "gestor"],
   precos: ["administrador", "gestor"],
   simulador: ["administrador", "gestor", "consultor"],
   propostas: ["administrador", "gestor", "consultor"],

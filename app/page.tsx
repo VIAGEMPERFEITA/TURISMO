@@ -3,14 +3,15 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
-  ArrowRight, CalendarDays, Camera, ChevronDown, CircleCheck, Clock3, Globe2,
-  HeartHandshake, MessageCircle, Plane, Play, Quote,
+  ArrowRight, CalendarDays, Camera, ChevronDown, CircleCheck, Globe2,
+  HeartHandshake, MessageCircle, Play, Quote,
   ShieldCheck, Sparkles, Users
 } from "lucide-react";
 import { WhatsAppLink } from "../components/whatsapp-link";
 import { TripCard } from "../components/trip-card";
 import { RealJourneysGallery } from "../components/real-journeys-gallery";
 import { PublicFooter, PublicHeader } from "../components/public-shell";
+import { DreamTripForm } from "../components/dream-trip-form";
 import { publishedTrips } from "../lib/trips";
 import { siteConfig } from "../lib/site-config";
 
@@ -35,9 +36,6 @@ const instagramTestimonials = [
 
 export default function Home() {
   const [faq, setFaq] = useState(0);
-  const [contactName, setContactName] = useState("");
-  const [contactPhone, setContactPhone] = useState("");
-  const [contactDestination, setContactDestination] = useState("");
   return (
     <main id="inicio">
       <PublicHeader/>
@@ -54,7 +52,7 @@ export default function Home() {
             <a className="hero-proof instagram-proof" href={siteConfig.instagram} target="_blank" rel="noopener noreferrer"><Camera/><div><strong>Mais de 10 mil seguidores</strong><small>acompanham nossas jornadas no Instagram</small></div><ArrowRight/></a>
           </div>
           <aside className="hero-card">
-            <span className="live"><i/> Atendimento personalizado</span><p>Planeje com segurança</p><h2>Encontre sua próxima jornada</h2><div className="hero-meta"><span><CalendarDays/>Datas validadas</span><span><ShieldCheck/>Suporte próximo</span></div><div className="line"/><small>Receba somente informações oficiais da nossa equipe</small><WhatsAppLink buttonText="Falar com um consultor">Falar com um consultor <ArrowRight/></WhatsAppLink>
+            <span className="live"><i/> Atendimento personalizado</span><p>Planeje com segurança</p><h2>Encontre sua próxima jornada</h2><div className="hero-meta"><span><CalendarDays/>Próximas jornadas disponíveis</span><span><ShieldCheck/>Suporte próximo</span></div><div className="line"/><small>Receba somente informações oficiais da nossa equipe</small><WhatsAppLink buttonText="Falar com um consultor">Falar com um consultor <ArrowRight/></WhatsAppLink>
           </aside>
         </div>
         <div className="trustbar shell"><span><ShieldCheck/>Assistência em cada etapa</span><span><Users/>Grupos cuidadosamente acompanhados</span><span><Globe2/>Curadoria internacional</span><span><HeartHandshake/>Atendimento humano</span></div>
@@ -62,7 +60,7 @@ export default function Home() {
 
       <section className="section home-featured-experiences" aria-labelledby="featured-experiences-title"><div className="shell">
         <div className="section-head"><div><p className="eyebrow">Próximas caravanas</p><h2 id="featured-experiences-title">Escolha sua próxima<br/>jornada.</h2></div><p className="featured-intro">Experiências que unem fé, história, cultura e propósito, apresentadas em ordem de prioridade e saída.</p></div>
-        <div className="catalog-grid home-confirmed-grid">{publishedTrips.slice(0,8).map((trip)=><TripCard key={trip.id} trip={trip}/>)}</div>
+        <div className="catalog-grid home-confirmed-grid">{publishedTrips.map((trip)=><TripCard key={trip.id} trip={trip}/>)}</div>
         <Link className="journey-all-link" href="/caravanas">Ver catálogo completo <ArrowRight size={16}/></Link>
       </div></section>
 
@@ -73,7 +71,7 @@ export default function Home() {
       <div className="shell metrics"><div><strong>Cuidado</strong><span>em cada detalhe da jornada</span></div><div><strong>Clareza</strong><span>nas informações comerciais</span></div><div><strong>Presença</strong><span>antes, durante e depois</span></div><div><strong>Propósito</strong><span>em cada experiência</span></div></div>
       </section>
 
-      <section className="experience section"><div className="shell experience-grid"><div className="experience-photo"><div className="floating-note"><Quote/><p>Cada informação publicada passa pela validação da equipe antes de chegar até você.</p><span>Compromisso Viagem Perfeita</span></div></div><div className="experience-copy"><p className="eyebrow light">O nosso jeito de cuidar</p><h2>Você vive a experiência.<br/><em>Nós cuidamos de tudo.</em></h2><p>Da primeira conversa ao abraço na volta, cada detalhe é pensado para que você viaje com leveza, confiança e presença.</p><ul><li><CircleCheck/>Roteiros com propósito e ritmo equilibrado</li><li><CircleCheck/>Informações comerciais apresentadas com clareza</li><li><CircleCheck/>Acompanhamento próximo em cada etapa</li><li><CircleCheck/>Orientação de documentos e preparação</li></ul><WhatsAppLink className="btn warm" buttonText="Solicitar orçamento">Solicitar orçamento <ArrowRight/></WhatsAppLink></div></div></section>
+      <section className="experience section"><div className="shell experience-grid"><div className="experience-photo"><div className="floating-note"><Quote/><p>Cada informação publicada passa pela validação da equipe antes de chegar até você.</p><span>Compromisso Viagem Perfeita</span></div></div><div className="experience-copy"><p className="eyebrow light">O nosso jeito de cuidar</p><h2>Você vive a experiência.<br/><em>Nós cuidamos de tudo.</em></h2><p>Da primeira conversa ao abraço na volta, cada detalhe é pensado para que você viaje com leveza, confiança e presença.</p><ul><li><CircleCheck/>Roteiros com propósito e ritmo equilibrado</li><li><CircleCheck/>Informações comerciais apresentadas com clareza</li><li><CircleCheck/>Acompanhamento próximo em cada etapa</li><li><CircleCheck/>Orientação de documentos e preparação</li></ul><WhatsAppLink className="btn warm" buttonText="Receber valores e condições" initialInterest="Receber valores e condições">Receber valores e condições <ArrowRight/></WhatsAppLink></div></div></section>
 
       <RealJourneysGallery preview />
 
@@ -85,7 +83,7 @@ export default function Home() {
 
       <section className="section faq"><div className="shell faq-grid"><div><p className="eyebrow">Antes de embarcar</p><h2>Suas dúvidas,<br/>respondidas com clareza.</h2><p>Nossa equipe está pronta para cuidar de tudo que você precisa.</p></div><div>{faqs.map(([q,a],i)=><div className="faq-item" key={q}><button aria-expanded={faq===i} onClick={()=>setFaq(faq===i?-1:i)}><span>{q}</span><ChevronDown className={faq===i?"rotate":""}/></button>{faq===i&&<p>{a}</p>}</div>)}</div></div></section>
 
-      <section className="cta" id="contato"><div className="cta-bg"/><div className="shell cta-content"><p className="eyebrow light">Sua próxima história começa aqui</p><h2>Qual é a viagem<br/>dos seus sonhos?</h2><p>Conte para a gente. Um especialista vai ouvir você e criar o melhor caminho para transformar esse sonho em realidade.</p><form onSubmit={e=>e.preventDefault()}><input aria-label="Seu nome" placeholder="Seu nome" value={contactName} onChange={e=>setContactName(e.target.value)}/><input aria-label="WhatsApp" placeholder="Seu WhatsApp" value={contactPhone} onChange={e=>setContactPhone(e.target.value)}/><select aria-label="Destino de interesse" value={contactDestination} onChange={e=>setContactDestination(e.target.value)}><option value="" disabled>Destino de interesse</option><option>Israel</option><option>Egito</option><option>Grécia e Turquia</option><option>Outro destino</option></select><WhatsAppLink className="btn warm" destination={contactDestination || undefined} initialLead={{name:contactName || undefined,phone:contactPhone || undefined}} buttonText="Quero viajar">Quero viajar <ArrowRight/></WhatsAppLink></form><small><ShieldCheck/> Seus dados estão seguros. Atendimento sem compromisso.</small></div></section>
+      <section className="cta" id="contato"><div className="cta-bg"/><div className="shell cta-content"><p className="eyebrow light">Sua próxima história começa aqui</p><h2>Qual é a viagem<br/>dos seus sonhos?</h2><p>Conte para a gente. Um especialista vai ouvir você e criar o melhor caminho para transformar esse sonho em realidade.</p><DreamTripForm/></div></section>
 
       <PublicFooter />
     </main>
