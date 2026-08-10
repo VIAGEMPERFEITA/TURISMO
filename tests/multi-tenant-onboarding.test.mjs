@@ -6,6 +6,10 @@ const migration = readFileSync(
   "supabase/migrations/202608100002_multi_tenant_onboarding.sql",
   "utf8",
 );
+const inviteFunction = readFileSync(
+  "supabase/functions/invite-organization-member/index.ts",
+  "utf8",
+);
 
 test("usuário sem convite não é associado à Viagem Perfeita", () => {
   const handler = migration.slice(migration.indexOf("create or replace function public.handle_new_user"));
@@ -32,4 +36,12 @@ test("operador da plataforma provisiona tenant com pipeline, fila e administrado
   assert.match(migration, /Pipeline comercial/);
   assert.match(migration, /Atendimento geral/);
   assert.match(migration, /normalized_email,'administrador'/);
+});
+
+test("convite persiste antes do e-mail e desfaz a pendência se o envio falhar", () => {
+  const persistence = inviteFunction.indexOf('rpc("invite_organization_member"');
+  const delivery = inviteFunction.indexOf("inviteUserByEmail");
+  assert.ok(persistence >= 0 && delivery > persistence);
+  assert.match(inviteFunction, /caller\.role !== "administrador"/);
+  assert.match(inviteFunction, /update\(\{ revoked_at: new Date\(\)\.toISOString\(\) \}\)/);
 });
