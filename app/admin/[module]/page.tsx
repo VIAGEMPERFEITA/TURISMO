@@ -9,6 +9,7 @@ import {AdminIdentity} from "../../../components/admin-identity";
 import {AdminModule} from "../../../components/admin-module";
 import {AdminReports} from "../../../components/admin-reports";
 import {AdminShell} from "../../../components/admin-shell";
+import {AdminTeamManagement} from "../../../components/admin-team-management";
 import {AdminWhatsAppConnection} from "../../../components/admin-whatsapp-connection";
 import {CrmOperationalModule} from "../../../components/crm-operational-module";
 import {PipelineBoard} from "../../../components/pipeline-board";
@@ -33,6 +34,7 @@ export default async function Page({params}:{params:Promise<{module:string}>}){
  else if(module==="caravanas")content=<AdminCaravans/>;
  else if(module==="identidade")content=<AdminIdentity/>;
  else if(module==="google")content=<AdminGoogleChecklist/>;
+ else if(module==="equipe")content=<AdminTeamManagement/>;
  else if(module==="configuracoes")content=<AdminWhatsAppConnection/>;
  else content=<AdminModule module={module}/>;
  return <AdminShell title={title}>{content}</AdminShell>;
