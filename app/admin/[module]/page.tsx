@@ -1,5 +1,6 @@
 import {notFound} from "next/navigation";
 import {AdminAiFoundation} from "../../../components/admin-ai-foundation";
+import {AdminAcquisition} from "../../../components/admin-acquisition";
 import {AdminCampaigns} from "../../../components/admin-campaigns";
 import {AdminCaravans} from "../../../components/admin-caravans";
 import {AdminCommercialAutomation} from "../../../components/admin-commercial-automation";
@@ -15,7 +16,7 @@ import {CrmOperationalModule} from "../../../components/crm-operational-module";
 import {PipelineBoard} from "../../../components/pipeline-board";
 import {WhatsAppInbox} from "../../../components/whatsapp-inbox";
 
-const modules=["dashboard","atendimento","campanhas","leads","pipeline","tarefas","caravanas","clientes","reservas","pagamentos","documentos","equipe","relatorios","ia","configuracoes","identidade","google","experiencias","destinos","faqs","artigos","midias","depoimentos","lideres","parceiros","precos","simulador","propostas","aprovacoes","base-de-conhecimento","ia-simulador","ia-logs","ia-configuracoes"];
+const modules=["dashboard","atendimento","campanhas","aquisicao","leads","pipeline","tarefas","caravanas","clientes","reservas","pagamentos","documentos","equipe","relatorios","ia","configuracoes","identidade","google","experiencias","destinos","faqs","artigos","midias","depoimentos","lideres","parceiros","precos","simulador","propostas","aprovacoes","base-de-conhecimento","ia-simulador","ia-logs","ia-configuracoes"];
 export const dynamicParams=false;
 export function generateStaticParams(){return modules.map(module=>({module}))}
 
@@ -26,6 +27,7 @@ export default async function Page({params}:{params:Promise<{module:string}>}){
  if(module==="dashboard")content=<AdminDashboard/>;
  else if(module==="atendimento")content=<WhatsAppInbox/>;
  else if(module==="campanhas")content=<AdminCampaigns/>;
+ else if(module==="aquisicao")content=<AdminAcquisition/>;
  else if(module==="pipeline")content=<PipelineBoard/>;
  else if(module==="relatorios")content=<AdminReports/>;
  else if(module==="ia")content=<AdminAiFoundation/>;

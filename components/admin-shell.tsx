@@ -2,13 +2,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { BadgePercent,BarChart3,BookOpen,Bot,Calculator,CalendarCheck,Car,ClipboardCheck,ClipboardList,CreditCard,FileCheck,FileText,Images,LayoutDashboard,LogOut,Map,Megaphone,Menu,MessageCircle,ScrollText,Search,Settings,Users,UserRoundCheck,X } from "lucide-react";
+import { BadgePercent,BarChart3,BookOpen,Bot,Calculator,CalendarCheck,Car,ClipboardCheck,ClipboardList,CreditCard,FileCheck,FileText,Images,LayoutDashboard,LogOut,Map,Megaphone,Menu,MessageCircle,Rocket,ScrollText,Search,Settings,Users,UserRoundCheck,X } from "lucide-react";
 import { canAccessModule, getAuthenticatedCrmUser, moduleFromPath, roleLabel, type CrmProfile } from "../lib/crm-auth";
 import { clearSupabaseBrowserClient, getSupabaseBrowserClient } from "../lib/supabase-client";
 
 const links=[[LayoutDashboard,"Dashboard","/admin/dashboard","dashboard"],[MessageCircle,"Caixa de entrada","/admin/atendimento","atendimento"],[Map,"Pipeline","/admin/pipeline","pipeline"],[Users,"Leads","/admin/leads","leads"],[ClipboardList,"Tarefas","/admin/tarefas","tarefas"],[UserRoundCheck,"Clientes","/admin/clientes","clientes"],[CalendarCheck,"Reservas","/admin/reservas","reservas"],[CreditCard,"Pagamentos","/admin/pagamentos","pagamentos"],[FileCheck,"Documentos","/admin/documentos","documentos"],[Car,"Caravanas","/admin/caravanas","caravanas"],[BadgePercent,"Preços","/admin/precos","precos"],[Calculator,"Simulador","/admin/simulador","simulador"],[FileText,"Propostas","/admin/propostas","propostas"],[ClipboardCheck,"Aprovações","/admin/aprovacoes","aprovacoes"],[Images,"Conteúdo","/admin/experiencias","experiencias"],[BookOpen,"Base de conhecimento","/admin/base-de-conhecimento","base-de-conhecimento"],[Bot,"Simulador da IA","/admin/ia-simulador","ia-simulador"],[Search,"Google","/admin/google","google"],[BarChart3,"Relatórios","/admin/relatorios","relatorios"],[Bot,"IA","/admin/ia","ia"],[ScrollText,"Logs da IA","/admin/ia-logs","ia-logs"],[Settings,"Configuração da IA","/admin/ia-configuracoes","ia-configuracoes"],[BookOpen,"Equipe","/admin/equipe","equipe"],[Settings,"Configurações","/admin/configuracoes","configuracoes"],[Settings,"Notificações","/admin/configuracoes/notificacoes","configuracoes"]] as const;
 
-const navigationLinks=[links[0],[Megaphone,"Campanhas e Disparos","/admin/campanhas","campanhas"] as const,...links.slice(1)] as const;
+const navigationLinks=[links[0],[Rocket,"Acelerador de vendas","/admin/aquisicao","aquisicao"] as const,[Megaphone,"Campanhas e Disparos","/admin/campanhas","campanhas"] as const,...links.slice(1)] as const;
 
 export function AdminShell({children,title}:{children:ReactNode;title:string}){
   const [ready,setReady]=useState(false); const [configured,setConfigured]=useState(true); const [menu,setMenu]=useState(false); const [profile,setProfile]=useState<CrmProfile|null>(null);

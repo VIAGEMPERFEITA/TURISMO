@@ -47,6 +47,7 @@ const moduleRoles: Record<string, readonly CrmRole[]> = {
   dashboard: crmRoles,
   atendimento: ["administrador", "gestor", "consultor"],
   campanhas: ["administrador", "gestor", "consultor"],
+  aquisicao: ["administrador", "gestor", "consultor", "visualizador"],
 };
 
 export function roleLabel(role: CrmRole) {
