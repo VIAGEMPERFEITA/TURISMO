@@ -159,6 +159,7 @@ Deno.serve(async request => {
   let conversation: any = null;
   let sourceMessage: any = null;
   let providerResponseId = "";
+  let usageEventId = "";
   try {
     const body = await request.json().catch(() => ({}));
     const conversationId = clean(body?.conversationId, 64);
@@ -229,6 +230,30 @@ Deno.serve(async request => {
     const config = configResult.data;
     if (configResult.error || !config?.enabled || !config?.provider_ready || config.mode === "desativado") throw new Error("assistant_disabled");
 
+    const budgetResult = await admin.rpc("reserve_ai_budget", { target_organization_id: conversation.organization_id });
+    if (budgetResult.error) throw budgetResult.error;
+    if (budgetResult.data?.allowed !== true) {
+      await registerHandoff(admin, conversation, "Limite operacional da IA atingido; atendimento encaminhado à equipe", "alta");
+      await admin.from("ai_operational_alerts").insert({
+        organization_id: conversation.organization_id,
+        alert_type: budgetResult.data?.reason || "ai_budget_block",
+        severity: "alta",
+        message: "A resposta automática foi bloqueada pelo limite operacional.",
+        metadata: budgetResult.data || {},
+      });
+      await admin.from("whatsapp_ai_jobs").update({ status: "ignorado", completed_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", jobId);
+      return json({ status: "ignorado", handoff: true, reason: budgetResult.data?.reason || "ai_budget_block" });
+    }
+    const usageInsert = await admin.from("ai_usage_events").insert({
+      organization_id: conversation.organization_id,
+      conversation_id: conversation.id,
+      operation: "whatsapp_assistant_response",
+      model: config.model || configuredModel,
+      estimated_cost_usd: 0.01,
+    }).select("id").single();
+    if (usageInsert.error) throw usageInsert.error;
+    usageEventId = usageInsert.data.id;
+
     const moderationResponse = await fetch("https://api.openai.com/v1/moderations", {
       method: "POST",
       headers: { Authorization: `Bearer ${openaiKey}`, "Content-Type": "application/json" },
@@ -289,6 +314,11 @@ Deno.serve(async request => {
       }
       response = await openaiResponse.json();
       providerResponseId = clean(response?.id, 160);
+      if (usageEventId) await admin.from("ai_usage_events").update({
+        prompt_tokens: Number(response?.usage?.input_tokens || 0),
+        completion_tokens: Number(response?.usage?.output_tokens || 0),
+        provider_response_id: providerResponseId || null,
+      }).eq("id", usageEventId);
       const research = webResearchFromResponse(response);
       research.queries.forEach(query => webQueries.add(query));
       research.sources.forEach(source => webSourceMap.set(source.url, source));
