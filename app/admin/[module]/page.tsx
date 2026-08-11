@@ -34,7 +34,7 @@ export default async function Page({params}:{params:Promise<{module:string}>}){
  else if(module==="relatorios")content=<AdminReports/>;
  else if(module==="ia")content=<AdminAiFoundation/>;
  else if(["precos","simulador","propostas","aprovacoes","base-de-conhecimento","ia-simulador","ia-logs","ia-configuracoes"].includes(module))content=<AdminCommercialAutomation module={module as "precos"|"simulador"|"propostas"|"aprovacoes"|"base-de-conhecimento"|"ia-simulador"|"ia-logs"|"ia-configuracoes"}/>;
- else if(["leads","clientes","reservas","pagamentos","documentos"].includes(module))content=<CrmOperationalModule module={module as "leads"|"clientes"|"reservas"|"pagamentos"|"documentos"}/>;
+ else if(["leads","tarefas","clientes","reservas","pagamentos","documentos"].includes(module))content=<CrmOperationalModule module={module as "leads"|"tarefas"|"clientes"|"reservas"|"pagamentos"|"documentos"}/>;
  else if(module==="caravanas")content=<AdminCaravans/>;
  else if(module==="identidade")content=<AdminIdentity/>;
  else if(module==="google")content=<AdminGoogleChecklist/>;
