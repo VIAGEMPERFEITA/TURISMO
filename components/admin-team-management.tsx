@@ -3,12 +3,12 @@
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { Building2, LoaderCircle, MailPlus, ShieldCheck, UserRoundCheck } from "lucide-react";
 import { getSupabaseBrowserClient } from "../lib/supabase-client";
+import { crmRoles, roleLabel, type CrmRole } from "../lib/crm-auth";
 
 type Member = { id: string; full_name: string; email: string; role: string; active: boolean };
 type Invitation = { id: string; email: string; role: string; expires_at: string; accepted_at: string | null };
 type Organization = { id: string; name: string; slug: string; active: boolean };
 
-const roles = ["administrador", "gestor", "consultor", "visualizador"];
 const errorText = (error: unknown) => error instanceof Error ? error.message : "Não foi possível concluir a operação.";
 
 export function AdminTeamManagement() {
@@ -96,7 +96,7 @@ export function AdminTeamManagement() {
       <div className="crm-panel-head"><div><h2>Convidar integrante</h2><p>O e-mail confirmado determina a empresa e a função.</p></div><MailPlus/></div>
       <form className="crm-form" onSubmit={invite}>
         <label>E-mail<input name="email" type="email" required autoComplete="email"/></label>
-        <label>Função<select name="role" defaultValue="consultor">{roles.map(role=><option key={role}>{role}</option>)}</select></label>
+        <label>Função<select name="role" defaultValue="consultor">{crmRoles.map(role=><option key={role} value={role}>{roleLabel(role as CrmRole)}</option>)}</select></label>
         <button className="crm-primary" disabled={busy}>{busy?<LoaderCircle className="spin"/>:<ShieldCheck/>}Criar convite</button>
       </form>
       {invitations.length?<div className="crm-table-wrap"><table className="crm-table"><thead><tr><th>E-mail</th><th>Função</th><th>Situação</th></tr></thead><tbody>{invitations.map(item=><tr key={item.id}><td>{item.email}</td><td>{item.role}</td><td>{item.accepted_at?"Aceito":new Date(item.expires_at)<new Date()?"Expirado":"Pendente"}</td></tr>)}</tbody></table></div>:null}

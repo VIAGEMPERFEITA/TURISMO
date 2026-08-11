@@ -41,7 +41,7 @@ Deno.serve(async (request) => {
   const body = await request.json().catch(() => ({}));
   const email = String(body.email ?? "").trim().toLowerCase();
   const role = String(body.role ?? "consultor");
-  const allowedRoles = ["administrador", "gestor", "consultor", "visualizador"];
+  const allowedRoles = ["administrador", "gestor", "consultor", "atendimento", "marketing", "financeiro", "visualizador"];
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !allowedRoles.includes(role)) {
     return json({ error: "E-mail ou função inválidos." }, 400);
   }
