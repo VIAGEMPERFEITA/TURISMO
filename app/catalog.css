@@ -195,6 +195,17 @@
 .crm-editor header h3 { color: #173d33; font: 22px Georgia,serif; }
 .crm-editor header button,.crm-row-actions button { display: grid; place-items: center; border: 0; color: #315148; background: transparent; cursor: pointer; }
 .crm-editor header svg,.crm-row-actions svg { width: 16px; }
+.crm-row-actions .crm-icon-button { width: 34px; height: 34px; border-radius: 9px; transition: background .2s ease,color .2s ease,transform .2s ease; }
+.crm-row-actions .crm-icon-button:hover { color: #173d33; background: #e7eeea; transform: translateY(-1px); }
+.crm-row-actions .crm-icon-button:focus-visible { outline: 3px solid rgba(34,103,79,.28); outline-offset: 2px; }
+.crm-row-actions .crm-danger { color: #9f3d35; }
+.crm-row-actions .crm-danger:hover { color: #842c25; background: #f8e6e3; }
+.crm-history-list { display: grid; gap: 12px; max-height: 55vh; margin-top: 20px; overflow: auto; }
+.crm-history-list article { padding: 16px; border: 1px solid #d9e1dc; border-radius: 12px; background: #f8faf8; }
+.crm-history-list article header { display: flex; justify-content: space-between; gap: 16px; align-items: baseline; }
+.crm-history-list article strong { color: #173d33; text-transform: capitalize; }
+.crm-history-list article time { color: #72827a; font-size: 11px; }
+.crm-history-list article pre { max-height: 180px; margin: 12px 0 0; padding: 12px; overflow: auto; color: #324a43; background: #fff; border-radius: 8px; font: 11px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace; white-space: pre-wrap; }
 .crm-editor > div { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
 .crm-editor label { display: grid; gap: 6px; color: #64756e; font-size: 9px; text-transform: uppercase; }
 .crm-editor input,.crm-editor select,.crm-editor textarea { width: 100%; min-height: 42px; padding: 9px; border: 1px solid #cfd8d3; background: #fff; }

@@ -13,6 +13,7 @@ import {AdminShell} from "../../../components/admin-shell";
 import {AdminTeamManagement} from "../../../components/admin-team-management";
 import {AdminWhatsAppConnection} from "../../../components/admin-whatsapp-connection";
 import {CrmOperationalModule} from "../../../components/crm-operational-module";
+import {ContentOperationalModule} from "../../../components/content-operational-module";
 import {PipelineBoard} from "../../../components/pipeline-board";
 import {WhatsAppInbox} from "../../../components/whatsapp-inbox";
 import {AdminYoavFoundation} from "../../../components/admin-yoav-foundation";
@@ -35,6 +36,7 @@ export default async function Page({params}:{params:Promise<{module:string}>}){
  else if(module==="ia")content=<AdminAiFoundation/>;
  else if(["precos","simulador","propostas","aprovacoes","base-de-conhecimento","ia-simulador","ia-logs","ia-configuracoes"].includes(module))content=<AdminCommercialAutomation module={module as "precos"|"simulador"|"propostas"|"aprovacoes"|"base-de-conhecimento"|"ia-simulador"|"ia-logs"|"ia-configuracoes"}/>;
  else if(["leads","tarefas","clientes","reservas","pagamentos","documentos"].includes(module))content=<CrmOperationalModule module={module as "leads"|"tarefas"|"clientes"|"reservas"|"pagamentos"|"documentos"}/>;
+ else if(["experiencias","destinos","faqs","artigos","midias","depoimentos","lideres","parceiros"].includes(module))content=<ContentOperationalModule module={module as "experiencias"|"destinos"|"faqs"|"artigos"|"midias"|"depoimentos"|"lideres"|"parceiros"}/>;
  else if(module==="caravanas")content=<AdminCaravans/>;
  else if(module==="identidade")content=<AdminIdentity/>;
  else if(module==="google")content=<AdminGoogleChecklist/>;
