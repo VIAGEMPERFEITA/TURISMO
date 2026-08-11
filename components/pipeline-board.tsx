@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { getSupabaseBrowserClient } from "../lib/supabase-client";
 
 type Stage = { id: string; name: string; code: string; position: number; color: string };
+type PipelineStageRow = Omit<Stage, "position"> & { stage_position: number };
 type Lead = { id: string; name: string; status: string; temperature: string; source: string; pipeline_stage_id: string | null };
 type TransitionResult = { ok: boolean; unmet_requirements?: Array<{ id: string; label: string }> };
 
@@ -23,11 +24,11 @@ export function PipelineBoard() {
     const client = getSupabaseBrowserClient();
     if (!client) return;
     const [{ data: stageData, error: stageError }, { data: leadData, error: leadError }] = await Promise.all([
-      client.from("pipeline_stages").select("id,name,code,position,color,pipelines!inner(is_default,active)").eq("active", true).eq("pipelines.is_default", true).eq("pipelines.active", true).order("position"),
+      client.rpc("crm_pipeline_board"),
       client.from("leads").select("id,name,status,temperature,source,pipeline_stage_id").is("deleted_at", null).limit(200),
     ]);
     if (stageError || leadError) { setMessage("Não foi possível carregar o pipeline."); return; }
-    setStages((stageData ?? []) as unknown as Stage[]);
+    setStages(((stageData ?? []) as PipelineStageRow[]).map(stage => ({ ...stage, position: stage.stage_position })));
     setLeads((leadData ?? []) as Lead[]);
   }, []);
 
