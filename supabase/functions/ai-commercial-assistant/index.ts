@@ -139,6 +139,7 @@ Deno.serve(async request => {
   let leadId: string | null = null;
   let sessionHash = "";
   let historyInput: Array<{ role: "user" | "assistant"; content: string }> = [];
+  let simulatorOrganizationId: string | null = null;
   let correlationId = crypto.randomUUID();
   try {
     const body = await request.json();
@@ -149,11 +150,22 @@ Deno.serve(async request => {
     const simulationMode = body?.simulation === true;
     if (message.length < 2 || sessionId.length < 16) return json({ error: "invalid_request" }, 400, cors);
 
+    if (simulationMode) {
+      const authorization = request.headers.get("authorization") || "";
+      const token = authorization.replace(/^Bearer\s+/i, "");
+      const { data: authData, error: authError } = await admin.auth.getUser(token);
+      if (authError || !authData.user) return json({ error: "unauthorized_simulation" }, 401, cors);
+      const { data: simulatorProfile } = await admin.from("profiles").select("role,active,organization_id").eq("id", authData.user.id).maybeSingle();
+      if (!simulatorProfile?.active || !["administrador", "gestor"].includes(simulatorProfile.role)) return json({ error: "forbidden_simulation" }, 403, cors);
+      simulatorOrganizationId = simulatorProfile.organization_id;
+    }
+
     sessionHash = await sha256(`${sessionId}:${request.headers.get("user-agent") || "unknown"}`);
     const safetyIdentifier = `vp_${sessionHash.slice(0, 40)}`;
     const { data: organization, error: organizationError } = await admin.from("organizations").select("id").eq("slug", "viagem-perfeita").single();
     if (organizationError || !organization) throw new Error("organization_not_found");
     organizationId = organization.id;
+    if (simulationMode && simulatorOrganizationId !== organizationId) return json({ error: "forbidden_simulation" }, 403, cors);
 
     const { data: limit, error: limitError } = await admin.rpc("consume_ai_rate_limit", { target_session_hash: sessionHash, max_requests: 12, window_minutes: 10 });
     if (limitError) throw new Error("rate_limit_unavailable");
@@ -167,7 +179,7 @@ Deno.serve(async request => {
       const { data: lead } = await admin.from("leads").select("id").eq("id", leadId).eq("organization_id", organizationId).is("deleted_at", null).maybeSingle();
       if (!lead) leadId = null;
     }
-    {
+    if (!simulationMode) {
       let existingQuery = admin.from("conversations").select("id").eq("organization_id", organizationId).eq("channel", "site").eq("anonymous_session_hash", sessionHash).neq("status", "encerrada").order("updated_at", { ascending: false }).limit(1);
       if (leadId) existingQuery = existingQuery.eq("lead_id", leadId);
       const { data: existing } = await existingQuery.maybeSingle();
