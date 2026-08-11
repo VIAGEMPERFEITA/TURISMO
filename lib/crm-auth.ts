@@ -1,6 +1,6 @@
 import type { Session, SupabaseClient } from "@supabase/supabase-js";
 
-export const crmRoles = ["administrador", "gestor", "consultor", "visualizador"] as const;
+export const crmRoles = ["administrador", "gestor", "consultor", "atendimento", "marketing", "financeiro", "visualizador"] as const;
 export type CrmRole = (typeof crmRoles)[number];
 
 export type CrmProfile = {
@@ -18,13 +18,16 @@ const roleLabels: Record<CrmRole, string> = {
   administrador: "Administrador",
   gestor: "Gestor",
   consultor: "Consultor",
+  atendimento: "Atendimento",
+  marketing: "Marketing",
+  financeiro: "Financeiro",
   visualizador: "Visualizador",
 };
 
 const moduleRoles: Record<string, readonly CrmRole[]> = {
   equipe: ["administrador"],
   configuracoes: ["administrador"],
-  pagamentos: ["administrador", "gestor"],
+  pagamentos: ["administrador", "gestor", "financeiro"],
   relatorios: ["administrador", "gestor"],
   ia: ["administrador", "gestor"],
   "ia-logs": ["administrador", "gestor"],
@@ -45,9 +48,13 @@ const moduleRoles: Record<string, readonly CrmRole[]> = {
   pipeline: ["administrador", "gestor", "consultor", "visualizador"],
   tarefas: ["administrador", "gestor", "consultor", "visualizador"],
   dashboard: crmRoles,
-  atendimento: ["administrador", "gestor", "consultor"],
-  campanhas: ["administrador", "gestor", "consultor"],
-  aquisicao: ["administrador", "gestor", "consultor", "visualizador"],
+  atendimento: ["administrador", "gestor", "consultor", "atendimento"],
+  campanhas: ["administrador", "gestor", "consultor", "marketing"],
+  aquisicao: ["administrador", "gestor", "consultor", "marketing", "visualizador"],
+  automacoes: ["administrador", "gestor"],
+  integracoes: ["administrador", "gestor"],
+  "conteudo-social": ["administrador", "gestor", "marketing"],
+  "melhoria-ia": ["administrador", "gestor"],
 };
 
 export function roleLabel(role: CrmRole) {

@@ -23,7 +23,7 @@ export function AdminLoginForm() {
   }
 
   return <form className="admin-login-card" onSubmit={login}>
-    <div className="admin-login-brand">VP</div><p>Área protegida</p><h1>CRM Viagem Perfeita</h1>
+    <div className="admin-login-brand">YOAV</div><p>Área protegida</p><h1>CRM YOAV</h1>
     <label><Mail/>E-mail<input type="email" required autoComplete="email" value={email} onChange={event => setEmail(event.target.value)}/></label>
     <label><KeyRound/>Senha<input type="password" required minLength={8} autoComplete="current-password" value={password} onChange={event => setPassword(event.target.value)}/></label>
     {message ? <div className="admin-message" role="alert">{message}</div> : null}
