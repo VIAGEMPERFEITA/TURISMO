@@ -15,11 +15,23 @@ export function AdminPasswordReset() {
   useEffect(() => {
     const client = getSupabaseBrowserClient();
     if (!client) { setValidSession(false); return; }
-    client.auth.getSession().then(({ data }) => setValidSession(Boolean(data.session)));
-    const { data } = client.auth.onAuthStateChange((event, session) => {
-      if (event === "PASSWORD_RECOVERY" || session) setValidSession(true);
+    const authClient = client;
+    let active = true;
+    async function validateLink() {
+      const code = new URLSearchParams(window.location.search).get("code");
+      if (code) {
+        const { error } = await authClient.auth.exchangeCodeForSession(code);
+        if (error && active) { setValidSession(false); return; }
+      }
+      const { data } = await authClient.auth.getSession();
+      if (active) setValidSession(Boolean(data.session));
+    }
+    void validateLink();
+    const { data } = authClient.auth.onAuthStateChange((event, session) => {
+      if (!active) return;
+      if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN" || session) setValidSession(true);
     });
-    return () => data.subscription.unsubscribe();
+    return () => { active = false; data.subscription.unsubscribe(); };
   }, []);
 
   async function submit(event: React.FormEvent) {
@@ -29,7 +41,10 @@ export function AdminPasswordReset() {
     const client = getSupabaseBrowserClient();
     if (!client || !validSession) return setMessage("Este link é inválido ou expirou.");
     const { error } = await client.auth.updateUser({ password });
-    if (error) return setMessage("Não foi possível redefinir a senha. Solicite um novo link.");
+    if (error) {
+      if (error.code === "weak_password") return setMessage("Escolha uma senha mais forte, combinando letras maiúsculas, minúsculas, números e símbolo.");
+      return setMessage(`Não foi possível salvar a senha: ${error.message}`);
+    }
     await client.auth.signOut(); setDone(true);
   }
 
