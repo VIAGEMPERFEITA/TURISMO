@@ -17,6 +17,7 @@ import {ContentOperationalModule} from "../../../components/content-operational-
 import {PipelineBoard} from "../../../components/pipeline-board";
 import {WhatsAppInbox} from "../../../components/whatsapp-inbox";
 import {AdminYoavFoundation} from "../../../components/admin-yoav-foundation";
+import {AdminInstagramAutomation} from "../../../components/admin-instagram-automation";
 
 const modules=["dashboard","atendimento","campanhas","aquisicao","leads","pipeline","automacoes","integracoes","conteudo-social","melhoria-ia","tarefas","caravanas","clientes","reservas","pagamentos","documentos","equipe","relatorios","ia","configuracoes","identidade","google","experiencias","destinos","faqs","artigos","midias","depoimentos","lideres","parceiros","precos","simulador","propostas","aprovacoes","base-de-conhecimento","ia-simulador","ia-logs","ia-configuracoes"];
 export const dynamicParams=false;
@@ -31,7 +32,8 @@ export default async function Page({params}:{params:Promise<{module:string}>}){
  else if(module==="campanhas")content=<AdminCampaigns/>;
  else if(module==="aquisicao")content=<AdminAcquisition/>;
  else if(module==="pipeline")content=<PipelineBoard/>;
- else if(["automacoes","integracoes","conteudo-social","melhoria-ia"].includes(module))content=<AdminYoavFoundation module={module as "automacoes"|"integracoes"|"conteudo-social"|"melhoria-ia"}/>;
+ else if(module==="automacoes")content=<AdminInstagramAutomation/>;
+ else if(["integracoes","conteudo-social","melhoria-ia"].includes(module))content=<AdminYoavFoundation module={module as "integracoes"|"conteudo-social"|"melhoria-ia"}/>;
  else if(module==="relatorios")content=<AdminReports/>;
  else if(module==="ia")content=<AdminAiFoundation/>;
  else if(["precos","simulador","propostas","aprovacoes","base-de-conhecimento","ia-simulador","ia-logs","ia-configuracoes"].includes(module))content=<AdminCommercialAutomation module={module as "precos"|"simulador"|"propostas"|"aprovacoes"|"base-de-conhecimento"|"ia-simulador"|"ia-logs"|"ia-configuracoes"}/>;
