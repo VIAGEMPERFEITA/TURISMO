@@ -1,0 +1,51 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const headers={"Content-Type":"application/json","Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization,x-client-info,apikey,content-type"};
+const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers});
+const clean=(value:unknown,max=4096)=>typeof value==="string"?value.trim().slice(0,max):"";
+
+Deno.serve(async request=>{
+  if(request.method==="OPTIONS")return new Response("ok",{headers});
+  if(request.method!=="POST")return json({error:"method_not_allowed"},405);
+  const supabaseUrl=Deno.env.get("SUPABASE_URL")||"",anonKey=Deno.env.get("SUPABASE_ANON_KEY")||"",serviceKey=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
+  const appId=Deno.env.get("META_INSTAGRAM_APP_ID")||"934096495646187",appSecret=Deno.env.get("META_INSTAGRAM_APP_SECRET")||"";
+  if(!supabaseUrl||!anonKey||!serviceKey||!appSecret)return json({error:"service_not_configured"},503);
+  const authorization=request.headers.get("Authorization")||"";
+  const userClient=createClient(supabaseUrl,anonKey,{global:{headers:{Authorization:authorization}},auth:{persistSession:false}});
+  const {data:authData}=await userClient.auth.getUser();
+  if(!authData.user)return json({error:"authentication_required"},401);
+  const admin=createClient(supabaseUrl,serviceKey,{auth:{persistSession:false}});
+  const {data:profile}=await admin.from("profiles").select("role,organization_id,active").eq("id",authData.user.id).maybeSingle();
+  if(!profile?.active||!["administrador","gestor"].includes(profile.role))return json({error:"forbidden"},403);
+  const body=await request.json().catch(()=>({}));
+  const code=clean(body.code,2048),redirectUri=clean(body.redirect_uri,1024);
+  if(!code||!redirectUri)return json({error:"incomplete_oauth_data"},400);
+  const expected="https://viagemperfeita.github.io/TURISMO/admin/configuracoes/";
+  if(redirectUri!==expected)return json({error:"invalid_redirect_uri"},400);
+
+  const form=new FormData();
+  form.set("client_id",appId);form.set("client_secret",appSecret);form.set("grant_type","authorization_code");form.set("redirect_uri",redirectUri);form.set("code",code);
+  const shortResponse=await fetch("https://api.instagram.com/oauth/access_token",{method:"POST",body:form});
+  const shortData=await shortResponse.json().catch(()=>({}));
+  const shortToken=clean(shortData.access_token),instagramUserId=clean(shortData.user_id,180);
+  if(!shortResponse.ok||!shortToken||!instagramUserId)return json({error:"instagram_token_exchange_failed"},502);
+  const longUrl=new URL("https://graph.instagram.com/access_token");
+  longUrl.searchParams.set("grant_type","ig_exchange_token");longUrl.searchParams.set("client_secret",appSecret);longUrl.searchParams.set("access_token",shortToken);
+  const longResponse=await fetch(longUrl);const longData=await longResponse.json().catch(()=>({}));
+  const accessToken=clean(longData.access_token)||shortToken;
+  if(!longResponse.ok||!accessToken)return json({error:"instagram_long_token_failed"},502);
+  const profileUrl=new URL("https://graph.instagram.com/v25.0/me");profileUrl.searchParams.set("fields","user_id,username,name,profile_picture_url");profileUrl.searchParams.set("access_token",accessToken);
+  const accountResponse=await fetch(profileUrl);const accountData=await accountResponse.json().catch(()=>({}));
+  if(!accountResponse.ok)return json({error:"instagram_account_validation_failed"},502);
+  const externalId=clean(accountData.user_id||accountData.id,180)||instagramUserId,username=clean(accountData.username,160)||"viagemperfeitatrip";
+  const secretName=`meta_instagram_${profile.organization_id}_${externalId}`;
+  const {error:vaultError}=await admin.rpc("store_instagram_access_token",{target_secret_name:secretName,target_access_token:accessToken});
+  if(vaultError)return json({error:"token_vault_failed"},500);
+  const connectedAt=new Date().toISOString();
+  const account={organization_id:profile.organization_id,channel:"instagram",name:`Instagram @${username}`,provider:"meta",external_account_id:externalId,status:"connected",credential_secret_name:secretName,webhook_secret_name:"META_INSTAGRAM_VERIFY_TOKEN",scopes:["instagram_business_basic","instagram_business_manage_messages","instagram_business_manage_comments","instagram_business_content_publish"],capabilities:{direct:true,comments:true,content_publish:true,human_handoff:true},settings:{username,profile_picture_url:clean(accountData.profile_picture_url,1024)||null,token_expires_in:Number(longData.expires_in||0),connected_at:connectedAt},last_sync_at:connectedAt,last_error:null,updated_at:connectedAt};
+  const {data:connected,error:upsertError}=await admin.from("channel_accounts").upsert(account,{onConflict:"organization_id,channel,name"}).select("id").single();
+  if(upsertError||!connected)return json({error:"account_update_failed"},500);
+  await admin.from("integration_connectors").update({status:"connected",credential_secret_name:secretName,last_sync_at:connectedAt,last_error:null,updated_at:connectedAt}).eq("organization_id",profile.organization_id).eq("provider","meta").eq("connector_type","social_messaging");
+  await admin.from("audit_logs").insert({organization_id:profile.organization_id,user_id:authData.user.id,action:"instagram_account_connected",entity_type:"channel_account",entity_id:connected.id,after_data:{external_account_id:externalId,username}});
+  return json({connected:true,username,externalAccountId:externalId});
+});
