@@ -61,7 +61,7 @@ Deno.serve(async request=>{
   }
   if(request.method!=="POST")return json({error:"method_not_allowed"},405);
   const raw=await request.text();
-  if(!await validSignature(raw,request.headers.get("x-hub-signature-256")||"",Deno.env.get("META_APP_SECRET")||Deno.env.get("META_INSTAGRAM_APP_SECRET")||""))
+  if(!await validSignature(raw,request.headers.get("x-hub-signature-256")||"",Deno.env.get("META_INSTAGRAM_APP_SECRET")||""))
     return json({error:"invalid_signature"},401);
   const supabaseUrl=Deno.env.get("SUPABASE_URL"),serviceKey=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if(!supabaseUrl||!serviceKey)return json({error:"service_unavailable"},503);
