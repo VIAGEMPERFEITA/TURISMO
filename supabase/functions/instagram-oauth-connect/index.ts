@@ -8,7 +8,7 @@ Deno.serve(async request=>{
   if(request.method==="OPTIONS")return new Response("ok",{headers});
   if(request.method!=="POST")return json({error:"method_not_allowed"},405);
   const supabaseUrl=Deno.env.get("SUPABASE_URL")||"",anonKey=Deno.env.get("SUPABASE_ANON_KEY")||"",serviceKey=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
-  const appId=Deno.env.get("META_INSTAGRAM_APP_ID")||"934096495646187",appSecret=Deno.env.get("META_INSTAGRAM_APP_SECRET")||"";
+  const appId=Deno.env.get("META_INSTAGRAM_APP_ID")||"1295731149305805",appSecret=Deno.env.get("META_APP_SECRET")||Deno.env.get("META_INSTAGRAM_APP_SECRET")||"";
   if(!supabaseUrl||!anonKey||!serviceKey||!appSecret)return json({error:"service_not_configured"},503);
   const authorization=request.headers.get("Authorization")||"";
   const userClient=createClient(supabaseUrl,anonKey,{global:{headers:{Authorization:authorization}},auth:{persistSession:false}});

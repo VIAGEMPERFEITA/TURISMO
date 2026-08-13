@@ -13,7 +13,7 @@ const templates=[
  {trigger:"instagram_dm",title:"Atendimento automático no Direct",objective:"Responder dúvidas e encaminhar vendas 24 horas",icon:Bot,steps:["Classificar intenção","Consultar base oficial","Responder sem inventar dados","Qualificar lead","Transferir para equipe"]},
 ];
 const labels:Record<string,string>={instagram_comment:"Comentário",instagram_keyword:"Palavra-chave",instagram_story_mention:"Story",instagram_story_reply:"Resposta ao Story",instagram_dm:"Direct",instagram_ad_referral:"Anúncio",instagram_follow:"Novo seguidor"};
-const INSTAGRAM_APP_ID="934096495646187",INSTAGRAM_REDIRECT_URI="https://viagemperfeita.github.io/TURISMO/admin/configuracoes/";
+const INSTAGRAM_APP_ID="1295731149305805",INSTAGRAM_REDIRECT_URI="https://viagemperfeita.github.io/TURISMO/admin/configuracoes/";
 
 export function AdminInstagramAutomation(){
  const[flows,setFlows]=useState<Flow[]>([]),[channel,setChannel]=useState<Channel|null>(null),[notice,setNotice]=useState(""),[busy,setBusy]=useState(false),[selected,setSelected]=useState(templates[0]),[keywords,setKeywords]=useState("roteiro, israel, caravana, valor"),[name,setName]=useState(templates[0].title);
