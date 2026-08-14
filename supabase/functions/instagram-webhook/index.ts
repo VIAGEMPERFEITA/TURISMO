@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { resolveMetaChannelAccount } from "../_shared/meta-account.ts";
 
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{"Content-Type":"application/json"}});
 const clean=(value:unknown,max=2000)=>typeof value==="string"?value.trim().slice(0,max):"";
@@ -48,6 +49,7 @@ async function handleDirectMessage(admin:any,entry:any,event:any,account:any,sup
   if(inbound.error){if(inbound.error.code==="23505")return;throw inbound.error;}
   const execution=await admin.from("social_automation_executions").insert({organization_id:account.organization_id,social_event_id:social.data.id,contact_identity_id:identity.id,channel_account_id:account.id,conversation_id:conversation.id,source_message_id:inbound.data.id,status:"queued",current_step:"ai_queued",messaging_window_expires_at:new Date(Date.now()+24*60*60*1000).toISOString(),input_redacted:{event_type:"instagram_dm",sender_id:senderId}}).select("id").single();
   if(execution.error){if(execution.error.code==="23505")return;throw execution.error;}
+  fetch(`${supabaseUrl}/functions/v1/omnichannel-whatsapp-router`,{method:"POST",headers:{Authorization:`Bearer ${serviceKey}`,apikey:serviceKey,"x-worker-secret":workerSecret,"Content-Type":"application/json"},body:JSON.stringify({sourceChannel:"instagram",sourceEventId:social.data.id,sourceConversationId:conversation.id,sourceMessageId:inbound.data.id,leadId:identity.lead_id,consentConfirmed:false,summary:text||"Mídia recebida pelo Instagram"})}).catch(()=>{});
   if(text&&workerSecret)fetch(`${supabaseUrl}/functions/v1/instagram-ai-orchestrator`,{method:"POST",headers:{Authorization:`Bearer ${serviceKey}`,apikey:serviceKey,"x-worker-secret":workerSecret,"Content-Type":"application/json"},body:JSON.stringify({executionId:execution.data.id})}).catch(()=>{});
 }
 
@@ -69,10 +71,10 @@ Deno.serve(async request=>{
   const workerSecret=Deno.env.get("WHATSAPP_WORKER_SECRET")||"";
   try{
     const payload=JSON.parse(raw);
-    if(payload?.object!=="instagram")return json({received:true,ignored:true});
+    if(payload?.object!=="instagram"&&payload?.object!=="page")return json({received:true,ignored:true});
     for(const entry of payload.entry||[]){
       const accountExternalId=clean(entry.id,160);
-      const {data:account}=await admin.from("channel_accounts").select("id,organization_id").eq("channel","instagram").eq("external_account_id",accountExternalId).eq("status","connected").maybeSingle();
+      const account=await resolveMetaChannelAccount(admin,"instagram",accountExternalId);
       if(!account)continue;
       for(const event of entry.messaging||[])await handleDirectMessage(admin,entry,event,account,supabaseUrl,serviceKey,workerSecret);
       for(const change of entry.changes||[]){

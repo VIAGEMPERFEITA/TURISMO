@@ -1,0 +1,24 @@
+project_id = "acitaazihlxdowfcxkqo"
+
+# A Meta chama estes dois webhooks diretamente e não envia um JWT do Supabase.
+# A autenticidade continua protegida pelo token de verificação (GET) e pela
+# assinatura HMAC x-hub-signature-256 (POST).
+[functions.instagram-webhook]
+verify_jwt = false
+
+[functions.facebook-messenger-webhook]
+verify_jwt = false
+
+# Chamadas do navegador usam o JWT anônimo do projeto.
+[functions.site-lead-register]
+verify_jwt = true
+
+# Funções internas exigem JWT e também validam WHATSAPP_WORKER_SECRET.
+[functions.omnichannel-whatsapp-router]
+verify_jwt = true
+
+[functions.facebook-ai-orchestrator]
+verify_jwt = true
+
+[functions.facebook-dispatch]
+verify_jwt = true

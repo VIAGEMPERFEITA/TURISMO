@@ -1,0 +1,14 @@
+.DS_Store
+.env*
+!.env.example
+.next/
+.pnpm-store/
+.tools/
+.vercel/
+.wrangler/
+dist/
+node_modules/
+out/
+supabase/.temp/
+tmp/
+tsconfig.tsbuildinfo
