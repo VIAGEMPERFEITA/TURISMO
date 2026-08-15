@@ -14,7 +14,11 @@ import { getSupabaseBrowserClient } from "../lib/supabase-client";
 const META_APP_ID = "1295731149305805";
 const META_CONFIGURATION_ID = "4336542926489080";
 const META_SDK_ID = "facebook-jssdk";
-const META_SDK_URL = "https://connect.facebook.net/pt_BR/sdk.js";
+const META_SDK_URLS = [
+  "https://connect.facebook.net/pt_BR/sdk.js",
+  "https://connect.facebook.net/en_US/sdk.js",
+] as const;
+const SDK_TIMEOUT_MS = 12_000;
 const LOGIN_TIMEOUT_MS = 20_000;
 
 type SignupSession = { waba_id?: string; phone_number_id?: string };
@@ -94,22 +98,62 @@ export function AdminWhatsAppConnection() {
 
     window.fbAsyncInit = initializeSdk;
     const existing = document.getElementById(META_SDK_ID);
-    if (existing) return;
+    if (existing) {
+      if (window.FB) initializeSdk();
+      return;
+    }
 
-    const script = document.createElement("script");
-    script.id = META_SDK_ID;
-    script.async = true;
-    script.defer = true;
-    script.crossOrigin = "anonymous";
-    script.src = META_SDK_URL;
-    script.onerror = () => {
+    let finished = false;
+    let urlIndex = 0;
+    const timeout = window.setTimeout(() => {
+      if (finished || initializeSdk()) return;
+      finished = true;
       setSdkReady(false);
       setSdkError(true);
       setMessage(
-        "O navegador não conseguiu carregar a conexão da Meta. Verifique bloqueadores de conteúdo e tente novamente.",
+        "O navegador não conseguiu carregar a conexão da Meta. Desative bloqueadores de conteúdo para este site e tente novamente.",
       );
+    }, SDK_TIMEOUT_MS);
+
+    const finish = () => {
+      if (finished || !initializeSdk()) return false;
+      finished = true;
+      window.clearTimeout(timeout);
+      return true;
     };
-    document.head.appendChild(script);
+
+    const appendScript = () => {
+      const script = document.createElement("script");
+      script.id = META_SDK_ID;
+      script.async = true;
+      script.defer = true;
+      script.src = META_SDK_URLS[urlIndex];
+      script.onload = () => {
+        if (!finish() && urlIndex + 1 < META_SDK_URLS.length) {
+          script.remove();
+          urlIndex += 1;
+          appendScript();
+        }
+      };
+      script.onerror = () => {
+        script.remove();
+        if (urlIndex + 1 < META_SDK_URLS.length) {
+          urlIndex += 1;
+          appendScript();
+          return;
+        }
+        window.clearTimeout(timeout);
+        finished = true;
+        setSdkReady(false);
+        setSdkError(true);
+        setMessage(
+          "O navegador não conseguiu carregar a conexão da Meta. Verifique bloqueadores de conteúdo e tente novamente.",
+        );
+      };
+      document.head.appendChild(script);
+    };
+
+    appendScript();
   }
 
   useEffect(() => {
