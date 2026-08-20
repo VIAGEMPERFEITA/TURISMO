@@ -8,6 +8,9 @@ const headers = {
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers });
+const officialPhone = "5531995285665";
+const metaAppId = "1295731149305805";
+const digitsOnly = (value: unknown) => String(value || "").replace(/\D/g, "");
 
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers });
@@ -61,10 +64,61 @@ Deno.serve(async (request) => {
     );
     const result = await response.json().catch(() => ({}));
     if (response.ok) {
+      const phones = Array.isArray(result.data) ? result.data : [];
+      const official = phones.find(
+        (phone: { display_phone_number?: string }) =>
+          digitsOnly(phone.display_phone_number) === officialPhone,
+      );
+      if (!official) {
+        attempts.push({ status: 409, metaType: "official_phone_not_found" });
+        continue;
+      }
+
+      const subscriptionResponse = await fetch(
+        `https://graph.facebook.com/v25.0/${wabaId}/subscribed_apps`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${metaAccessToken}` },
+        },
+      );
+      const subscription = await subscriptionResponse.json().catch(() => ({}));
+      if (!subscriptionResponse.ok || subscription.success !== true) {
+        attempts.push({
+          status: subscriptionResponse.status,
+          metaCode: subscription.error?.code,
+          metaType: subscription.error?.type || "waba_subscription_failed",
+        });
+        continue;
+      }
+
+      const subscribedAppsResponse = await fetch(
+        `https://graph.facebook.com/v25.0/${wabaId}/subscribed_apps?fields=id,name`,
+        { headers: { Authorization: `Bearer ${metaAccessToken}` } },
+      );
+      const subscribedApps = await subscribedAppsResponse.json().catch(() => ({}));
+      const registeredApps = Array.isArray(subscribedApps.data) ? subscribedApps.data : [];
+      const appConfirmed = registeredApps.some(
+        (app: { id?: string }) => String(app.id || "") === metaAppId,
+      );
+      if (!subscribedAppsResponse.ok || !appConfirmed) {
+        attempts.push({
+          status: subscribedAppsResponse.status || 409,
+          metaCode: subscribedApps.error?.code,
+          metaType: subscribedApps.error?.type || "waba_subscription_not_confirmed",
+        });
+        continue;
+      }
+
       return json({
         ok: true,
         status: response.status,
-        count: Array.isArray(result.data) ? result.data.length : 0,
+        count: phones.length,
+        wabaId,
+        phoneNumberId: official.id,
+        officialNumberMatched: true,
+        webhookSubscribed: true,
+        subscribedAppConfirmed: true,
+        subscribedAppId: metaAppId,
         checkedAt: new Date().toISOString(),
       });
     }

@@ -80,6 +80,23 @@ Deno.serve(async (request) => {
     return json({ error: "phone_does_not_belong_to_waba" }, 409);
   }
 
+  // A conta somente começa a entregar mensagens ao webhook depois que este
+  // aplicativo é assinado na WABA. Fazer isso durante o cadastro evita uma
+  // conexão aparentemente ativa que nunca recebe eventos.
+  const subscriptionResponse = await fetch(
+    `https://graph.facebook.com/v25.0/${wabaId}/subscribed_apps`,
+    { method: "POST", headers: authHeaders },
+  );
+  const subscription = await subscriptionResponse.json().catch(() => ({}));
+  if (!subscriptionResponse.ok || subscription.success !== true) {
+    console.error("WhatsApp WABA subscription failed", {
+      status: subscriptionResponse.status,
+      code: subscription.error?.code,
+      type: subscription.error?.type,
+    });
+    return json({ error: "meta_waba_subscription_failed" }, 502);
+  }
+
   const digits = clean(phone.display_phone_number).replace(/\D/g, "");
   if (!/^[1-9][0-9]{9,14}$/.test(digits)) {
     return json({ error: "invalid_phone_number" }, 409);
@@ -115,7 +132,12 @@ Deno.serve(async (request) => {
     verified_name: clean(phone.verified_name),
     quality_rating: clean(phone.quality_rating),
     token_secret_name: secretName,
-    metadata: { signup: "embedded", session_info_version: 3, connected_at: connectedAt },
+    metadata: {
+      signup: "embedded",
+      session_info_version: 3,
+      connected_at: connectedAt,
+      webhook_subscription: "active",
+    },
     updated_at: connectedAt,
   };
   const { data: updatedAccount, error: updateError } = await admin
@@ -139,5 +161,6 @@ Deno.serve(async (request) => {
     phoneNumberId,
     wabaId,
     displayPhone: phone.display_phone_number,
+    webhookSubscribed: true,
   });
 });

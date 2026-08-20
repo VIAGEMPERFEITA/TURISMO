@@ -1,0 +1,12 @@
+.next
+dist
+node_modules
+.wrangler
+.vinext
+coverage
+auditoria-browser
+relatorio-capturas
+VIAGEM-PERFEITA-*
+*.zip
+*.md
+supabase/.temp

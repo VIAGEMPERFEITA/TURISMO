@@ -6,6 +6,9 @@ project_id = "acitaazihlxdowfcxkqo"
 [functions.instagram-webhook]
 verify_jwt = false
 
+[functions.whatsapp-webhook]
+verify_jwt = false
+
 [functions.facebook-messenger-webhook]
 verify_jwt = false
 
