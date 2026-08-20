@@ -29,7 +29,7 @@ test("Instagram Direct creates a shared conversation, runs AI and sends through 
  assert.match(runtime,/instagram_outbound_messages/);
  assert.match(runtime,/conversations_instagram_thread_idx/);
  assert.match(orchestrator,/search_authorized_knowledge/);
- assert.match(orchestrator,/control_mode!=="ia"/);
+ assert.match(orchestrator,/control_mode\s*!==\s*"ia"/);
  assert.match(dispatch,/graph\.instagram\.com\/v25\.0\/me\/messages/);
  assert.match(dispatch,/META_INSTAGRAM_ACCESS_TOKEN/);
  assert.match(dispatch,/idempotent:true/);

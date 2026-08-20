@@ -277,7 +277,7 @@ Deno.serve(async request => {
       role: item.direction === "entrada" ? "user" : "assistant",
       content: clean(item.body, 1800),
     }));
-    let input: unknown[] = [...history, { role: "user", content: clean(sourceMessage.body, 4000) }];
+    const input: unknown[] = [...history, { role: "user", content: clean(sourceMessage.body, 4000) }];
     const enabledToolNames = new Set((config.allowed_tools || []).map(String));
     const researchPolicyResult = await admin.from("ai_research_policies")
       .select("enabled,allowed_topics,prohibited_topics,prefer_official_sources,require_citations,max_sources")

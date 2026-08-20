@@ -31,7 +31,7 @@ async function handleDirectMessage(admin:any,entry:any,event:any,account:any,sup
   if(!senderId||!externalId)return;
   const social=await admin.from("social_events").upsert({organization_id:account.organization_id,channel_account_id:account.id,event_type:"instagram_dm",external_event_id:externalId,payload_redacted:{sender_id:senderId,text:text||null,has_media:Array.isArray(message?.attachments)},received_at:new Date().toISOString()},{onConflict:"organization_id,event_type,external_event_id",ignoreDuplicates:true}).select("id").maybeSingle();
   if(!social.data)return;
-  let identityResult=await admin.from("contact_identities").select("id,lead_id,customer_id").eq("organization_id",account.organization_id).eq("identity_type","instagram").eq("external_id",senderId).maybeSingle();
+  const identityResult=await admin.from("contact_identities").select("id,lead_id,customer_id").eq("organization_id",account.organization_id).eq("identity_type","instagram").eq("external_id",senderId).maybeSingle();
   let identity:any=identityResult.data;
   if(!identity){
     const lead=await admin.from("leads").insert({organization_id:account.organization_id,name:"Contato do Instagram",phone:`instagram:${senderId}`,phone_normalized:`ig:${senderId}`,source:"Instagram",source_detail:"Direct",consent:false}).select("id").single();
@@ -40,7 +40,7 @@ async function handleDirectMessage(admin:any,entry:any,event:any,account:any,sup
     if(created.error)throw created.error;identity=created.data;
   }
   await admin.from("social_events").update({contact_identity_id:identity.id}).eq("id",social.data.id);
-  let conversationResult=await admin.from("conversations").select("id,lead_id,customer_id").eq("organization_id",account.organization_id).eq("channel_account_id",account.id).eq("channel","instagram").eq("external_thread_id",senderId).maybeSingle();
+  const conversationResult=await admin.from("conversations").select("id,lead_id,customer_id").eq("organization_id",account.organization_id).eq("channel_account_id",account.id).eq("channel","instagram").eq("external_thread_id",senderId).maybeSingle();
   let conversation:any=conversationResult.data;
   if(!conversation){
     const created=await admin.from("conversations").insert({organization_id:account.organization_id,lead_id:identity.lead_id,customer_id:identity.customer_id,channel:"instagram",channel_account_id:account.id,external_thread_id:senderId,status:"ia_ativa",control_mode:"ia",ai_managed:true,requires_human:false,customer_service_window_expires_at:new Date(Date.now()+24*60*60*1000).toISOString(),last_message_at:new Date().toISOString()}).select("id,lead_id,customer_id").single();

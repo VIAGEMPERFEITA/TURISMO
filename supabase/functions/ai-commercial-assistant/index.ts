@@ -208,7 +208,7 @@ Deno.serve(async request => {
 
     const enabledToolNames = new Set((config.allowed_tools || []).map(String));
     const enabledTools = tools.filter(tool => enabledToolNames.has(tool.name));
-    let input: unknown[] = [...historyInput, { role: "user", content: message }];
+    const input: unknown[] = [...historyInput, { role: "user", content: message }];
     let response: OpenAIResponse | null = null;
     let handoff = false;
     const usedSources: Array<{ type: string; title: string; url?: string; version?: string }> = [];

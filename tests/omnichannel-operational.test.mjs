@@ -21,7 +21,7 @@ test("webhook do Messenger valida assinatura, ignora eco e registra o evento",()
 
 test("orquestrador do Messenger respeita tomada humana",()=>{
   const source=read("supabase/functions/facebook-ai-orchestrator/index.ts");
-  assert.match(source,/control_mode!=="ia"/);
+  assert.match(source,/control_mode\s*!==\s*"ia"/);
   assert.match(source,/requires_human/);
   assert.match(source,/facebook-dispatch/);
 });
