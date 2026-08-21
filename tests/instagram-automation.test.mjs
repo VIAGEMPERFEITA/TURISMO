@@ -20,6 +20,7 @@ test("Instagram webhook verifies Meta signature and deduplicates events",()=>{
  assert.match(webhook,/x-hub-signature-256/);
  assert.match(webhook,/META_INSTAGRAM_APP_SECRET/);
  assert.match(webhook,/ignoreDuplicates:true/);
+ assert.match(webhook,/eq\("event_type","instagram_dm"\)\.eq\("external_event_id",externalId\)/);
  assert.match(webhook,/24\*60\*60\*1000/);
  assert.match(webhook,/entry\.messaging/);
  assert.match(webhook,/field==="messages"&&value\?\.message/);

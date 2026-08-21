@@ -29,7 +29,8 @@ async function handleDirectMessage(admin:any,entry:any,event:any,account:any,sup
   if(message?.is_echo)return;
   const senderId=clean(event?.sender?.id,180),externalId=clean(message?.mid,220),text=clean(message?.text,4000);
   if(!senderId||!externalId)return;
-  const social=await admin.from("social_events").upsert({organization_id:account.organization_id,channel_account_id:account.id,event_type:"instagram_dm",external_event_id:externalId,payload_redacted:{sender_id:senderId,text:text||null,has_media:Array.isArray(message?.attachments)},received_at:new Date().toISOString()},{onConflict:"organization_id,event_type,external_event_id",ignoreDuplicates:true}).select("id").maybeSingle();
+  let social=await admin.from("social_events").upsert({organization_id:account.organization_id,channel_account_id:account.id,event_type:"instagram_dm",external_event_id:externalId,payload_redacted:{sender_id:senderId,text:text||null,has_media:Array.isArray(message?.attachments)},received_at:new Date().toISOString()},{onConflict:"organization_id,event_type,external_event_id",ignoreDuplicates:true}).select("id").maybeSingle();
+  if(!social.data) social=await admin.from("social_events").select("id").eq("organization_id",account.organization_id).eq("event_type","instagram_dm").eq("external_event_id",externalId).maybeSingle();
   if(!social.data)return;
   const identityResult=await admin.from("contact_identities").select("id,lead_id,customer_id").eq("organization_id",account.organization_id).eq("identity_type","instagram").eq("external_id",senderId).maybeSingle();
   let identity:any=identityResult.data;
