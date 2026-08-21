@@ -336,6 +336,16 @@ Deno.serve(async request => {
         await admin.from("conversations").update({ requires_human: true, status: "aguardando_equipe", next_action: "Analisar condição comercial solicitada", updated_at: new Date().toISOString() }).eq("id", conversationId);
       }
     }
+    const requestsPrivateAccountData = /\b(meu|minha|meus|minhas)\b.{0,50}\b(passaporte|documento|parcela|pagamento|reserva)\b|\b(passaporte|documento|parcela)\b.{0,40}\b(aprovad[oa]|status|situa[cç][aã]o|vencimento)\b/i.test(message);
+    if (requestsPrivateAccountData) {
+      handoff = true;
+      answer = "Para proteger seus dados, não consulto documentos, parcelas ou reservas sem autenticação de identidade. Vou encaminhar você para um atendente autorizado continuar com segurança.";
+      if (conversationId && !simulationMode) {
+        const { data: pendingHandoff } = await admin.from("ai_handoffs").select("id").eq("conversation_id", conversationId).eq("status", "pendente").limit(1).maybeSingle();
+        if (!pendingHandoff) await admin.from("ai_handoffs").insert({ organization_id: organizationId, conversation_id: conversationId, lead_id: leadId, reason: "Consulta privada exige autenticação de identidade", context_summary: "Cliente solicitou acesso a dados privados de documento, pagamento ou reserva.", priority: "alta" });
+        await admin.from("conversations").update({ requires_human: true, status: "aguardando_equipe", next_action: "Autenticar identidade antes de consultar dados privados", updated_at: new Date().toISOString() }).eq("id", conversationId);
+      }
+    }
     if (conversationId) {
       await admin.from("messages").insert({ conversation_id: conversationId, direction: "saida", message_type: "texto", body: answer, delivery_status: "enviado", metadata: { source: "ai_assistant", response_id: response?.id, used_sources: usedSources, simulation: simulationMode } });
       await admin.from("conversations").update({ last_message_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", conversationId);
