@@ -31,6 +31,10 @@ type AssistantResult = {
 
 type Assertion = { name: string; passed: boolean; detail: string };
 
+const DEFAULT_BATCH_SIZE = 12;
+const MAX_BATCH_SIZE = 20;
+const TEST_CONCURRENCY = 3;
+
 const clean = (value: unknown, max = 2400) => typeof value === "string" ? value.trim().slice(0, max) : "";
 const includesAny = (value: string, terms: string[]) => terms.some(term => value.includes(term));
 
@@ -98,7 +102,7 @@ Deno.serve(async request => {
   if (!profile?.active || !["administrador", "gestor"].includes(profile.role)) return json({ error: "forbidden" }, 403, cors);
 
   const body = await request.json().catch(() => ({}));
-  const limit = Math.max(1, Math.min(5, Number(body.limit) || 3));
+  const limit = Math.max(1, Math.min(MAX_BATCH_SIZE, Number(body.limit) || DEFAULT_BATCH_SIZE));
   const { data: scenarios, error: scenarioError } = await admin.from("ai_test_scenarios")
     .select("id,scenario_code,category,input_message,expected_behavior,critical")
     .eq("organization_id", profile.organization_id)
@@ -117,9 +121,7 @@ Deno.serve(async request => {
   const latest = new Map<string, string>();
   for (const run of previousRuns || []) if (!latest.has(run.scenario_id)) latest.set(run.scenario_id, run.status);
   const pending = ((scenarios || []) as Scenario[]).filter(item => latest.get(item.id) !== "passou").slice(0, limit);
-  const results = [];
-
-  for (const scenario of pending) {
+  const runScenario = async (scenario: Scenario) => {
     const started = Date.now();
     let assistant: AssistantResult = {};
     let responseOk = false;
@@ -147,7 +149,13 @@ Deno.serve(async request => {
       assertions: evaluation.assertions,
       duration_ms: duration,
     });
-    results.push({ scenarioCode: scenario.scenario_code, category: scenario.category, status: insertError ? "erro" : status, assertions: evaluation.assertions, durationMs: duration, error: insertError?.message });
+    return { scenarioCode: scenario.scenario_code, category: scenario.category, status: insertError ? "erro" : status, assertions: evaluation.assertions, durationMs: duration, error: insertError?.message };
+  };
+
+  const results = [];
+  for (let index = 0; index < pending.length; index += TEST_CONCURRENCY) {
+    const chunk = pending.slice(index, index + TEST_CONCURRENCY);
+    results.push(...await Promise.all(chunk.map(runScenario)));
   }
 
   const passedNow = results.filter(item => item.status === "passou").length;
