@@ -22,6 +22,8 @@ test("Instagram webhook verifies Meta signature and deduplicates events",()=>{
  assert.match(webhook,/ignoreDuplicates:true/);
  assert.match(webhook,/24\*60\*60\*1000/);
  assert.match(webhook,/entry\.messaging/);
+ assert.match(webhook,/field==="messages"&&value\?\.message/);
+ assert.match(webhook,/handleDirectMessage\(admin,entry,value/);
  assert.match(webhook,/instagram-ai-orchestrator/);
 });
 

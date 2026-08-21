@@ -81,6 +81,12 @@ Deno.serve(async request=>{
       for(const event of entry.messaging||[])await handleDirectMessage(admin,entry,event,account,supabaseUrl,serviceKey,workerSecret);
       for(const change of entry.changes||[]){
       const value=change.value||{},field=clean(change.field,80),type=eventType(field,value);
+      // A API com Login do Instagram entrega DMs em entry.changes[field=messages],
+      // enquanto integrações legadas podem usar entry.messaging. Normalize ambos.
+      if(field==="messages"&&value?.message){
+        await handleDirectMessage(admin,entry,value,account,supabaseUrl,serviceKey,workerSecret);
+        continue;
+      }
       const senderId=clean(value?.sender?.id||value?.from?.id||value?.user_id,180);
       const externalId=clean(value?.message?.mid||value?.id||`${entry.time}:${field}:${senderId}`,220);
       const inserted=await admin.from("social_events").upsert({organization_id:account.organization_id,channel_account_id:account.id,event_type:type,external_event_id:externalId,payload_redacted:{field,sender_id:senderId,media_id:clean(value?.media?.id,180),text:clean(value?.message?.text||value?.text,1000)},received_at:new Date().toISOString()},{onConflict:"organization_id,event_type,external_event_id",ignoreDuplicates:true}).select("id").maybeSingle();
