@@ -51,4 +51,5 @@ test("Instagram OAuth callback exchanges the code on its configured return page"
  assert.match(route,/module==="configuracoes"[\s\S]*AdminInstagramOAuthCallback/);
  assert.match(oauth,/META_INSTAGRAM_APP_ID/);
  assert.match(oauth,/admin\/configuracoes\//);
+ assert.match(oauth,/String\(shortData\.user_id/);
 });

@@ -27,7 +27,7 @@ Deno.serve(async request=>{
   form.set("client_id",appId);form.set("client_secret",appSecret);form.set("grant_type","authorization_code");form.set("redirect_uri",redirectUri);form.set("code",code);
   const shortResponse=await fetch("https://api.instagram.com/oauth/access_token",{method:"POST",body:form});
   const shortData=await shortResponse.json().catch(()=>({}));
-  const shortToken=clean(shortData.access_token),instagramUserId=clean(shortData.user_id,180);
+  const shortToken=clean(shortData.access_token),instagramUserId=clean(String(shortData.user_id??""),180);
   if(!shortResponse.ok||!shortToken||!instagramUserId)return json({error:"instagram_token_exchange_failed"},502);
   const longUrl=new URL("https://graph.instagram.com/access_token");
   longUrl.searchParams.set("grant_type","ig_exchange_token");longUrl.searchParams.set("client_secret",appSecret);longUrl.searchParams.set("access_token",shortToken);
@@ -37,7 +37,7 @@ Deno.serve(async request=>{
   const profileUrl=new URL("https://graph.instagram.com/v25.0/me");profileUrl.searchParams.set("fields","user_id,username,name,profile_picture_url");profileUrl.searchParams.set("access_token",accessToken);
   const accountResponse=await fetch(profileUrl);const accountData=await accountResponse.json().catch(()=>({}));
   if(!accountResponse.ok)return json({error:"instagram_account_validation_failed"},502);
-  const externalId=clean(accountData.user_id||accountData.id,180)||instagramUserId,username=clean(accountData.username,160)||"viagemperfeitatrip";
+  const externalId=clean(String(accountData.user_id||accountData.id||""),180)||instagramUserId,username=clean(accountData.username,160)||"viagemperfeitatrip";
   const secretName=`meta_instagram_${profile.organization_id}_${externalId}`;
   const {error:vaultError}=await admin.rpc("store_instagram_access_token",{target_secret_name:secretName,target_access_token:accessToken});
   if(vaultError)return json({error:"token_vault_failed"},500);
