@@ -322,7 +322,7 @@ Deno.serve(async request => {
     }
 
     let answer = responseText(response) || "Não encontrei informação aprovada suficiente. Posso encaminhar você para um consultor.";
-    const requiresApprovedSource = /\b(pre[cç]o|pre[cç]os|valor|valores|quanto custa|or[cç]amento|parcelamento|condi[cç][aã]o de pagamento)\b|roteiro\s+completo/i.test(message);
+    const requiresApprovedSource = /\b(pre[cç]o|pre[cç]os|valor|valores|quanto custa|or[cç]amento|parcelamento|condi[cç][aã]o de pagamento|vaga|vagas|disponibilidade|dispon[ií]vel)\b|roteiro\s+completo/i.test(message);
     if (requiresApprovedSource && usedSources.length === 0) {
       handoff = true;
       answer = "Não encontrei uma fonte oficial suficiente para confirmar essa informação. Vou encaminhar seu atendimento a um consultor, que continuará somente com os dados oficiais vigentes.";
