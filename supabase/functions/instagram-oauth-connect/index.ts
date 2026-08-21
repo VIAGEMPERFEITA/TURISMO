@@ -37,9 +37,10 @@ Deno.serve(async request=>{
   const profileUrl=new URL("https://graph.instagram.com/v25.0/me");profileUrl.searchParams.set("fields","user_id,username,name,profile_picture_url");profileUrl.searchParams.set("access_token",accessToken);
   const accountResponse=await fetch(profileUrl);const accountData=await accountResponse.json().catch(()=>({}));
   if(!accountResponse.ok)return json({error:"instagram_account_validation_failed"},502);
+  const graphAccountId=clean(String(accountData.id||instagramUserId),180);
   const externalId=clean(String(accountData.user_id||accountData.id||""),180)||instagramUserId,username=clean(accountData.username,160)||"viagemperfeitatrip";
   const subscribedFields=["messages","message_reactions","messaging_postbacks","messaging_seen","messaging_referral","comments","live_comments","mentions"];
-  const subscriptionUrl=new URL(`https://graph.instagram.com/v25.0/${encodeURIComponent(externalId)}/subscribed_apps`);
+  const subscriptionUrl=new URL(`https://graph.instagram.com/v25.0/${encodeURIComponent(graphAccountId)}/subscribed_apps`);
   const subscriptionResponse=await fetch(subscriptionUrl,{
     method:"POST",
     headers:{Authorization:`Bearer ${accessToken}`,"Content-Type":"application/json"},
@@ -55,6 +56,6 @@ Deno.serve(async request=>{
   const {data:connected,error:upsertError}=await admin.from("channel_accounts").upsert(account,{onConflict:"organization_id,channel,name"}).select("id").single();
   if(upsertError||!connected)return json({error:"account_update_failed"},500);
   await admin.from("integration_connectors").update({status:"connected",credential_secret_name:secretName,last_sync_at:connectedAt,last_error:null,updated_at:connectedAt}).eq("organization_id",profile.organization_id).eq("provider","meta").eq("connector_type","social_messaging");
-  await admin.from("audit_logs").insert({organization_id:profile.organization_id,user_id:authData.user.id,action:"instagram_account_connected",entity_type:"channel_account",entity_id:connected.id,after_data:{external_account_id:externalId,username,subscribed_fields:subscribedFields}});
+  await admin.from("audit_logs").insert({organization_id:profile.organization_id,user_id:authData.user.id,action:"instagram_account_connected",entity_type:"channel_account",entity_id:connected.id,after_data:{external_account_id:externalId,graph_account_id:graphAccountId,username,subscribed_fields:subscribedFields}});
   return json({connected:true,username,externalAccountId:externalId});
 });
