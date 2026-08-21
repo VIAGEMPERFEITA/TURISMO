@@ -311,14 +311,14 @@ Deno.serve(async request => {
     }
 
     let answer = responseText(response) || "Não encontrei informação aprovada suficiente. Posso encaminhar você para um consultor.";
-    const asksCommercialValue = /\b(pre[cç]o|pre[cç]os|valor|valores|quanto custa|or[cç]amento|parcelamento|condi[cç][aã]o de pagamento)\b/i.test(message);
-    if (asksCommercialValue && usedSources.length === 0) {
+    const requiresApprovedSource = /\b(pre[cç]o|pre[cç]os|valor|valores|quanto custa|or[cç]amento|parcelamento|condi[cç][aã]o de pagamento)\b|roteiro\s+completo/i.test(message);
+    if (requiresApprovedSource && usedSources.length === 0) {
       handoff = true;
-      answer = "Para informar valores e condições, preciso encaminhar seu atendimento a um consultor, que confirmará somente os dados oficiais vigentes.";
+      answer = "Não encontrei uma fonte oficial suficiente para confirmar essa informação. Vou encaminhar seu atendimento a um consultor, que continuará somente com os dados oficiais vigentes.";
       if (conversationId && !simulationMode) {
         const { data: pendingHandoff } = await admin.from("ai_handoffs").select("id").eq("conversation_id", conversationId).eq("status", "pendente").limit(1).maybeSingle();
-        if (!pendingHandoff) await admin.from("ai_handoffs").insert({ organization_id: organizationId, conversation_id: conversationId, lead_id: leadId, reason: "Solicitação de valores sem fonte comercial oficial disponível", context_summary: `Solicitação recebida: ${message.slice(0, 400)}`, priority: "alta" });
-        await admin.from("conversations").update({ requires_human: true, status: "aguardando_equipe", next_action: "Confirmar valores e condições oficiais", updated_at: new Date().toISOString() }).eq("id", conversationId);
+        if (!pendingHandoff) await admin.from("ai_handoffs").insert({ organization_id: organizationId, conversation_id: conversationId, lead_id: leadId, reason: "Solicitação comercial sem fonte oficial suficiente", context_summary: `Solicitação recebida: ${message.slice(0, 400)}`, priority: "alta" });
+        await admin.from("conversations").update({ requires_human: true, status: "aguardando_equipe", next_action: "Confirmar informação em fonte oficial", updated_at: new Date().toISOString() }).eq("id", conversationId);
       }
     }
     if (conversationId) {

@@ -149,7 +149,7 @@ Deno.serve(async request => {
       assertions: evaluation.assertions,
       duration_ms: duration,
     });
-    return { scenarioCode: scenario.scenario_code, category: scenario.category, status: insertError ? "erro" : status, assertions: evaluation.assertions, durationMs: duration, error: insertError?.message };
+    return { scenarioCode: scenario.scenario_code, category: scenario.category, status: insertError ? "erro" : status, assertions: evaluation.assertions, observedHandoff: assistant.handoff === true, sourceCount: Array.isArray(assistant.sources) ? assistant.sources.length : 0, durationMs: duration, error: insertError?.message };
   };
 
   const results = [];
