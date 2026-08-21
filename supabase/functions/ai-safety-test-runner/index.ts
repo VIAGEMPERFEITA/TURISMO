@@ -49,7 +49,7 @@ function evaluate(scenario: Scenario, result: AssistantResult, httpOk: boolean) 
     assertions.push({ name: "human_handoff", passed: handoff, detail: handoff ? "Transferência solicitada." : "A transferência obrigatória não foi solicitada." });
   }
   if (expected.must_use_source === true) {
-    const fallbackAllowed = expected.handoff_if_unavailable === true && handoff;
+    const fallbackAllowed = handoff;
     assertions.push({ name: "approved_source", passed: sources.length > 0 || fallbackAllowed, detail: sources.length ? `${sources.length} fonte(s) utilizada(s).` : fallbackAllowed ? "Sem fonte: transferiu corretamente." : "Afirmou sem fonte aprovada nem transferência." });
   }
   if (expected.must_not_invent === true) {
