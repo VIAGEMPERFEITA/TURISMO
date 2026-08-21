@@ -21,20 +21,26 @@ Deno.serve(async request=>{
   if(["enviado","entregue","lido","cancelado"].includes(outbound.status))return json({status:outbound.status,idempotent:true});
   const account=Array.isArray(outbound.channel_accounts)?outbound.channel_accounts[0]:outbound.channel_accounts;
   if(!account?.external_account_id||account.status!=="connected")return json({error:"account_not_connected"},409);
-  let token=clean(fallbackToken,4096);
-  if(account?.credential_secret_name){const {data:vaultToken}=await admin.rpc("get_instagram_access_token",{target_secret_name:account.credential_secret_name});token=clean(vaultToken,4096)||token;}
-  if(!token)return json({error:"access_token_missing"},503);
+  let vaultToken="";
+  if(account?.credential_secret_name){const {data}=await admin.rpc("get_instagram_access_token",{target_secret_name:account.credential_secret_name});vaultToken=clean(data,4096);}
+  const tokens=[vaultToken,clean(fallbackToken,4096)].filter((token,index,tokens)=>token&&tokens.indexOf(token)===index);
+  if(!tokens.length)return json({error:"access_token_missing"},503);
   if(outbound.attempts>=5)return json({error:"retry_limit_reached"},409);
   const claimed=await admin.from("instagram_outbound_messages").update({status:"processando",processing_at:new Date().toISOString(),attempts:outbound.attempts+1,updated_at:new Date().toISOString()})
     .eq("id",outbound.id).in("status",["pendente","falhou"]).select("id").maybeSingle();
   if(!claimed.data)return json({error:"already_processing"},409);
   try{
-    const response=await fetch("https://graph.instagram.com/v25.0/me/messages",{
-      method:"POST",headers:{Authorization:`Bearer ${token}`,"Content-Type":"application/json"},
-      body:JSON.stringify({recipient:{id:outbound.recipient_id},message:outbound.payload?.message||outbound.payload}),
-    });
-    const provider=await response.json().catch(()=>({}));
-    if(!response.ok)throw new Error(`meta_${response.status}_${clean(provider?.error?.code,40)}_${clean(provider?.error?.message,240)}`);
+    let response:Response|null=null,provider:any={};
+    for(const token of tokens){
+      response=await fetch("https://graph.instagram.com/v25.0/me/messages",{
+        method:"POST",headers:{Authorization:`Bearer ${token}`,"Content-Type":"application/json"},
+        body:JSON.stringify({recipient:{id:outbound.recipient_id},message:outbound.payload?.message||outbound.payload}),
+      });
+      provider=await response.json().catch(()=>({}));
+      const authFailure=response.status===401||[190,102].includes(Number(provider?.error?.code));
+      if(response.ok||!authFailure)break;
+    }
+    if(!response?.ok)throw new Error(`meta_${response?.status||502}_${clean(provider?.error?.code,40)}_${clean(provider?.error?.message,240)}`);
     const externalId=clean(provider?.message_id||provider?.messages?.[0]?.id,256),now=new Date().toISOString();
     await admin.from("instagram_outbound_messages").update({status:"enviado",external_message_id:externalId||null,sent_at:now,last_error:null,updated_at:now}).eq("id",outbound.id);
     if(outbound.message_id)await admin.from("messages").update({external_message_id:externalId||null,provider:"meta_instagram",delivery_status:"enviado"}).eq("id",outbound.message_id);
