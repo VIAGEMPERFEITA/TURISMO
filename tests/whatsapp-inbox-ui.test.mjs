@@ -14,6 +14,16 @@ test("caixa compartilhada integra assumir, transferir, devolver e enviar",()=>{
   assert.doesNotMatch(inbox,/META_WHATSAPP_ACCESS_TOKEN|WHATSAPP_WORKER_SECRET/);
 });
 
+test("caixa compartilhada reúne os três canais oficiais sem liberar envios sociais antes do teste controlado",()=>{
+  assert.match(inbox,/Caixa de entrada omnichannel/);
+  assert.match(inbox,/\.in\("channel",\["whatsapp","instagram","facebook"\]\)/);
+  for(const channel of ["WhatsApp","Instagram","Messenger"]){
+    assert.match(inbox,new RegExp(channel));
+  }
+  assert.match(inbox,/selected\.channel!=="whatsapp"/);
+  assert.match(inbox,/teste externo controlado/);
+});
+
 test("envio passa por sessão autenticada e dispatcher protegido",()=>{
   assert.match(sender,/auth\.getUser\(\)/);
   assert.match(sender,/enqueue_whatsapp_text/);
