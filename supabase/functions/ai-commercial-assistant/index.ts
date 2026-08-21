@@ -310,7 +310,17 @@ Deno.serve(async request => {
       }
     }
 
-    const answer = responseText(response) || "Não encontrei informação aprovada suficiente. Posso encaminhar você para um consultor.";
+    let answer = responseText(response) || "Não encontrei informação aprovada suficiente. Posso encaminhar você para um consultor.";
+    const asksCommercialValue = /\b(pre[cç]o|pre[cç]os|valor|valores|quanto custa|or[cç]amento|parcelamento|condi[cç][aã]o de pagamento)\b/i.test(message);
+    if (asksCommercialValue && usedSources.length === 0) {
+      handoff = true;
+      answer = "Para informar valores e condições, preciso encaminhar seu atendimento a um consultor, que confirmará somente os dados oficiais vigentes.";
+      if (conversationId && !simulationMode) {
+        const { data: pendingHandoff } = await admin.from("ai_handoffs").select("id").eq("conversation_id", conversationId).eq("status", "pendente").limit(1).maybeSingle();
+        if (!pendingHandoff) await admin.from("ai_handoffs").insert({ organization_id: organizationId, conversation_id: conversationId, lead_id: leadId, reason: "Solicitação de valores sem fonte comercial oficial disponível", context_summary: `Solicitação recebida: ${message.slice(0, 400)}`, priority: "alta" });
+        await admin.from("conversations").update({ requires_human: true, status: "aguardando_equipe", next_action: "Confirmar valores e condições oficiais", updated_at: new Date().toISOString() }).eq("id", conversationId);
+      }
+    }
     if (conversationId) {
       await admin.from("messages").insert({ conversation_id: conversationId, direction: "saida", message_type: "texto", body: answer, delivery_status: "enviado", metadata: { source: "ai_assistant", response_id: response?.id, used_sources: usedSources, simulation: simulationMode } });
       await admin.from("conversations").update({ last_message_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", conversationId);
