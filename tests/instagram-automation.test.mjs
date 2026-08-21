@@ -36,6 +36,8 @@ test("Instagram Direct creates a shared conversation, runs AI and sends through 
  assert.match(orchestrator,/search_authorized_knowledge/);
  assert.match(orchestrator,/control_mode\s*!==\s*"ia"/);
  assert.match(dispatch,/graph\.instagram\.com\/v25\.0\/me\/messages/);
+ assert.match(dispatch,/instagram_access_token_invalid/);
+ assert.match(dispatch,/channel_accounts/);
  assert.match(dispatch,/META_INSTAGRAM_ACCESS_TOKEN/);
  assert.match(dispatch,/idempotent:true/);
 });
@@ -48,6 +50,8 @@ test("CRM offers governed quick automations and human handoff",()=>{
 test("Instagram OAuth callback exchanges the code on its configured return page",()=>{
  assert.match(ui,/AdminInstagramOAuthCallback/);
  assert.match(ui,/functions\.invoke\("instagram-oauth-connect"/);
+ assert.match(ui,/Renovar conexão do Instagram/);
+ assert.match(ui,/Reconexão necessária/);
  assert.match(route,/module==="configuracoes"[\s\S]*AdminInstagramOAuthCallback/);
  assert.match(oauth,/META_INSTAGRAM_APP_ID/);
  assert.match(oauth,/admin\/configuracoes\//);
