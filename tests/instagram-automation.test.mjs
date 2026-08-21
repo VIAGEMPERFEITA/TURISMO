@@ -8,6 +8,8 @@ const runtime=fs.readFileSync("supabase/migrations/202608120002_instagram_operat
 const orchestrator=fs.readFileSync("supabase/functions/instagram-ai-orchestrator/index.ts","utf8");
 const dispatch=fs.readFileSync("supabase/functions/instagram-dispatch/index.ts","utf8");
 const ui=fs.readFileSync("components/admin-instagram-automation.tsx","utf8");
+const route=fs.readFileSync("app/admin/[module]/page.tsx","utf8");
+const oauth=fs.readFileSync("supabase/functions/instagram-oauth-connect/index.ts","utf8");
 
 test("Instagram automation is tenant-safe, auditable and blocked before connection",()=>{
  assert.match(migration,/social_automation_executions/);
@@ -41,4 +43,12 @@ test("Instagram Direct creates a shared conversation, runs AI and sends through 
 test("CRM offers governed quick automations and human handoff",()=>{
  for(const value of ["instagram_comment","instagram_keyword","instagram_story_mention","instagram_dm","human_handoff","require_approved_knowledge"])assert.match(ui,new RegExp(value));
  assert.match(ui,/Todos os fluxos começam como rascunho/);
+});
+
+test("Instagram OAuth callback exchanges the code on its configured return page",()=>{
+ assert.match(ui,/AdminInstagramOAuthCallback/);
+ assert.match(ui,/functions\.invoke\("instagram-oauth-connect"/);
+ assert.match(route,/module==="configuracoes"[\s\S]*AdminInstagramOAuthCallback/);
+ assert.match(oauth,/META_INSTAGRAM_APP_ID/);
+ assert.match(oauth,/admin\/configuracoes\//);
 });

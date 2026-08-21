@@ -17,7 +17,7 @@ import {ContentOperationalModule} from "../../../components/content-operational-
 import {PipelineBoard} from "../../../components/pipeline-board";
 import {WhatsAppInbox} from "../../../components/whatsapp-inbox";
 import {AdminYoavFoundation} from "../../../components/admin-yoav-foundation";
-import {AdminInstagramAutomation} from "../../../components/admin-instagram-automation";
+import {AdminInstagramAutomation,AdminInstagramOAuthCallback} from "../../../components/admin-instagram-automation";
 
 const modules=["dashboard","atendimento","campanhas","aquisicao","leads","pipeline","automacoes","integracoes","conteudo-social","melhoria-ia","tarefas","caravanas","clientes","reservas","pagamentos","documentos","equipe","relatorios","ia","configuracoes","identidade","google","experiencias","destinos","faqs","artigos","midias","depoimentos","lideres","parceiros","precos","simulador","propostas","aprovacoes","base-de-conhecimento","ia-simulador","ia-logs","ia-configuracoes"];
 export const dynamicParams=false;
@@ -43,7 +43,7 @@ export default async function Page({params}:{params:Promise<{module:string}>}){
  else if(module==="identidade")content=<AdminIdentity/>;
  else if(module==="google")content=<AdminGoogleChecklist/>;
  else if(module==="equipe")content=<AdminTeamManagement/>;
- else if(module==="configuracoes")content=<AdminWhatsAppConnection/>;
+ else if(module==="configuracoes")content=<><AdminInstagramOAuthCallback/><AdminWhatsAppConnection/></>;
  else content=<AdminModule module={module}/>;
  return <AdminShell title={title}>{content}</AdminShell>;
 }
