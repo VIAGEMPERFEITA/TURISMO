@@ -326,6 +326,16 @@ Deno.serve(async request => {
     if (mentionsSensitiveData && !alreadyWarnedSensitiveData) {
       answer = `Não envie nem compartilhe dados sensíveis, como número de cartão, senha ou documento pessoal, por esta conversa. ${answer}`;
     }
+    const requestsUnauthorizedCommercialAction = /\bdesconto\b|conceda\s+\d+(?:[.,]\d+)?%|reserve\s+.+(?:agora|sem\s+(?:falar|atendimento|confirma[cç][aã]o))/i.test(message);
+    if (requestsUnauthorizedCommercialAction) {
+      handoff = true;
+      answer = "Não posso conceder descontos nem confirmar reservas automaticamente. Vou encaminhar seu atendimento para que um consultor verifique e autorize qualquer condição comercial.";
+      if (conversationId && !simulationMode) {
+        const { data: pendingHandoff } = await admin.from("ai_handoffs").select("id").eq("conversation_id", conversationId).eq("status", "pendente").limit(1).maybeSingle();
+        if (!pendingHandoff) await admin.from("ai_handoffs").insert({ organization_id: organizationId, conversation_id: conversationId, lead_id: leadId, reason: "Solicitação de desconto ou reserva exige autorização humana", context_summary: `Solicitação recebida: ${message.slice(0, 400)}`, priority: "alta" });
+        await admin.from("conversations").update({ requires_human: true, status: "aguardando_equipe", next_action: "Analisar condição comercial solicitada", updated_at: new Date().toISOString() }).eq("id", conversationId);
+      }
+    }
     if (conversationId) {
       await admin.from("messages").insert({ conversation_id: conversationId, direction: "saida", message_type: "texto", body: answer, delivery_status: "enviado", metadata: { source: "ai_assistant", response_id: response?.id, used_sources: usedSources, simulation: simulationMode } });
       await admin.from("conversations").update({ last_message_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", conversationId);
