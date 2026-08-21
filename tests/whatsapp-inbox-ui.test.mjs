@@ -22,6 +22,8 @@ test("caixa compartilhada reúne os três canais oficiais sem liberar envios soc
   }
   assert.match(inbox,/selected\.channel!=="whatsapp"/);
   assert.match(inbox,/teste externo controlado/);
+  assert.match(inbox,/Falha de entrega:/);
+  assert.match(inbox,/error_message/);
 });
 
 test("envio passa por sessão autenticada e dispatcher protegido",()=>{
