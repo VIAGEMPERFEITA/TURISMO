@@ -52,6 +52,10 @@ test("Instagram OAuth callback exchanges the code on its configured return page"
  assert.match(ui,/functions\.invoke\("instagram-oauth-connect"/);
  assert.match(ui,/Renovar conexão do Instagram/);
  assert.match(ui,/Reconexão necessária/);
+ assert.match(ui,/Central da automação da IA/);
+ assert.match(ui,/Operação governada/);
+ assert.match(ui,/phone_e164","5531995285665/);
+ assert.match(ui,/runtime\.whatsapp==="ativo"/);
  assert.match(route,/module==="configuracoes"[\s\S]*AdminInstagramOAuthCallback/);
  assert.match(oauth,/META_INSTAGRAM_APP_ID/);
  assert.match(oauth,/admin\/configuracoes\//);
