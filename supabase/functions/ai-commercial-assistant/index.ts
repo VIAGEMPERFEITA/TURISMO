@@ -321,6 +321,11 @@ Deno.serve(async request => {
         await admin.from("conversations").update({ requires_human: true, status: "aguardando_equipe", next_action: "Confirmar informação em fonte oficial", updated_at: new Date().toISOString() }).eq("id", conversationId);
       }
     }
+    const mentionsSensitiveData = /\b(cart[aã]o|passaporte|cpf|rg|senha|token|documento\s+pessoal|dados?\s+sens[ií]ve(?:l|is))\b/i.test(message);
+    const alreadyWarnedSensitiveData = /n[aã]o\s+(?:envie|compartilhe)|dados?\s+sens[ií]ve(?:l|is)/i.test(answer);
+    if (mentionsSensitiveData && !alreadyWarnedSensitiveData) {
+      answer = `Não envie nem compartilhe dados sensíveis, como número de cartão, senha ou documento pessoal, por esta conversa. ${answer}`;
+    }
     if (conversationId) {
       await admin.from("messages").insert({ conversation_id: conversationId, direction: "saida", message_type: "texto", body: answer, delivery_status: "enviado", metadata: { source: "ai_assistant", response_id: response?.id, used_sources: usedSources, simulation: simulationMode } });
       await admin.from("conversations").update({ last_message_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", conversationId);
