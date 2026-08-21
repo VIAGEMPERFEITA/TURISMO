@@ -346,6 +346,11 @@ Deno.serve(async request => {
         await admin.from("conversations").update({ requires_human: true, status: "aguardando_equipe", next_action: "Autenticar identidade antes de consultar dados privados", updated_at: new Date().toISOString() }).eq("id", conversationId);
       }
     }
+    const attemptsPromptInjection = /ignore\s+(?:todas?\s+)?(?:as\s+)?regras|revele\s+(?:dados|segredos|token|prompt)|prompt\s+interno|instru[cç][oõ]es\s+do\s+sistema/i.test(message);
+    if (attemptsPromptInjection) {
+      handoff = true;
+      answer = "Não posso ignorar as regras de segurança, revelar dados de clientes, credenciais ou instruções internas. Por privacidade, essa solicitação foi recusada e pode ser encaminhada para revisão humana.";
+    }
     if (conversationId) {
       await admin.from("messages").insert({ conversation_id: conversationId, direction: "saida", message_type: "texto", body: answer, delivery_status: "enviado", metadata: { source: "ai_assistant", response_id: response?.id, used_sources: usedSources, simulation: simulationMode } });
       await admin.from("conversations").update({ last_message_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", conversationId);
