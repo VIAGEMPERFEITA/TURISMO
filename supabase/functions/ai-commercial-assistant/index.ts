@@ -196,6 +196,17 @@ Deno.serve(async request => {
       await admin.from("messages").insert({ conversation_id: conversationId, direction: "entrada", message_type: "texto", body: message, metadata: { source: "ai_assistant" } });
     }
 
+    const attemptsPromptInjection = /ignore\s+(?:todas?\s+)?(?:as\s+)?regras|revele\s+(?:dados|segredos|token|prompt)|prompt\s+interno|instru[cç][oõ]es\s+do\s+sistema/i.test(message);
+    if (attemptsPromptInjection) {
+      const answer = "Não posso ignorar as regras de segurança, revelar dados de clientes, credenciais ou instruções internas. Por privacidade, essa solicitação foi recusada e pode ser encaminhada para revisão humana.";
+      if (conversationId) {
+        await admin.from("messages").insert({ conversation_id: conversationId, direction: "saida", message_type: "texto", body: answer, delivery_status: "enviado", metadata: { source: "ai_assistant", deterministic_safety: "prompt_injection", simulation: simulationMode } });
+        await admin.from("conversations").update({ requires_human: true, status: "aguardando_equipe", next_action: "Revisar tentativa de violação das regras da IA", last_message_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq("id", conversationId);
+      }
+      await admin.from("ai_actions").insert({ organization_id: organizationId, conversation_id: conversationId, lead_id: leadId, action_name: "prompt_injection_blocked", input_data: { message_length: message.length }, output_data: { handoff: true }, allowed: true, success: true, model: configuredModel, duration_ms: Date.now() - started, correlation_id: correlationId, safety_identifier: safetyIdentifier });
+      return json({ message: answer, handoff: true, conversationId, correlationId, sources: [], simulation: simulationMode }, 200, cors);
+    }
+
     const moderation = await fetch("https://api.openai.com/v1/moderations", { method: "POST", headers: { Authorization: `Bearer ${openaiKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "omni-moderation-latest", input: message }) });
     if (!moderation.ok) {
       const providerError = await moderation.json().catch(() => ({}));
@@ -346,10 +357,15 @@ Deno.serve(async request => {
         await admin.from("conversations").update({ requires_human: true, status: "aguardando_equipe", next_action: "Autenticar identidade antes de consultar dados privados", updated_at: new Date().toISOString() }).eq("id", conversationId);
       }
     }
-    const attemptsPromptInjection = /ignore\s+(?:todas?\s+)?(?:as\s+)?regras|revele\s+(?:dados|segredos|token|prompt)|prompt\s+interno|instru[cç][oõ]es\s+do\s+sistema/i.test(message);
-    if (attemptsPromptInjection) {
+    const reportsComplaint = /\b(reclama[cç][aã]o|quero\s+reclamar|insatisfeit[oa]|decepcionad[oa]|p[eé]ssim[oa]|mal\s+atendid[oa]|cobran[cç]a\s+indevida|problema\s+(?:grave|sem\s+solu[cç][aã]o))\b/i.test(message);
+    if (reportsComplaint) {
       handoff = true;
-      answer = "Não posso ignorar as regras de segurança, revelar dados de clientes, credenciais ou instruções internas. Por privacidade, essa solicitação foi recusada e pode ser encaminhada para revisão humana.";
+      answer = "Sinto muito pelo ocorrido. Vou encaminhar sua reclamação com prioridade para um atendente humano analisar o caso e continuar o atendimento com você.";
+      if (conversationId && !simulationMode) {
+        const { data: pendingHandoff } = await admin.from("ai_handoffs").select("id").eq("conversation_id", conversationId).eq("status", "pendente").limit(1).maybeSingle();
+        if (!pendingHandoff) await admin.from("ai_handoffs").insert({ organization_id: organizationId, conversation_id: conversationId, lead_id: leadId, reason: "Reclamação de cliente exige atendimento humano", context_summary: `Reclamação recebida: ${message.slice(0, 400)}`, priority: "alta" });
+        await admin.from("conversations").update({ requires_human: true, status: "aguardando_equipe", next_action: "Analisar reclamação com prioridade", updated_at: new Date().toISOString() }).eq("id", conversationId);
+      }
     }
     if (conversationId) {
       await admin.from("messages").insert({ conversation_id: conversationId, direction: "saida", message_type: "texto", body: answer, delivery_status: "enviado", metadata: { source: "ai_assistant", response_id: response?.id, used_sources: usedSources, simulation: simulationMode } });
