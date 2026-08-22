@@ -103,7 +103,9 @@ Deno.serve(async request => {
 
   const body = await request.json().catch(() => ({}));
   const limit = Math.max(1, Math.min(MAX_BATCH_SIZE, Number(body.limit) || DEFAULT_BATCH_SIZE));
-  const criticalOnly = body.criticalOnly === true;
+  // O portão exige 100% da matriz. O executor sempre percorre todas as pendências;
+  // a criticidade continua registrada e visível para priorização e auditoria.
+  const criticalOnly = false;
   let scenarioQuery = admin.from("ai_test_scenarios")
     .select("id,scenario_code,category,input_message,expected_behavior,critical")
     .eq("organization_id", profile.organization_id)
