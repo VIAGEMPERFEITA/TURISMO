@@ -22,7 +22,7 @@ test("Instagram webhook verifies Meta signature and deduplicates events",()=>{
  assert.match(webhook,/x-hub-signature-256/);
  assert.match(webhook,/META_INSTAGRAM_APP_SECRET/);
  assert.match(webhook,/ignoreDuplicates:true/);
- assert.match(webhook,/eq\("event_type","instagram_dm"\)\.eq\("external_event_id",externalId\)/);
+ assert.match(webhook,/eq\("event_type",normalizedEventType\)\.eq\("external_event_id",externalId\)/);
  assert.match(webhook,/24\*60\*60\*1000/);
  assert.match(webhook,/entry\.messaging/);
  assert.match(webhook,/field==="messages"&&value\?\.message/);
@@ -40,6 +40,15 @@ test("Instagram Direct creates a shared conversation, runs AI and sends through 
  assert.match(dispatch,/channel_accounts/);
  assert.match(dispatch,/META_INSTAGRAM_ACCESS_TOKEN/);
  assert.match(dispatch,/idempotent:true/);
+});
+
+test("Instagram social flows execute comments, stories and keyword DMs without duplicate replies",()=>{
+ assert.match(webhook,/selectDirectFlow/);
+ assert.match(webhook,/instagram_keyword/);
+ assert.match(webhook,/automation_versions/);
+ assert.match(webhook,/flowId:flow\.id,socialEventId:inserted\.data\.id,eventType:type/);
+ assert.match(webhook,/Date\.now\(\)-24\*60\*60\*1000/);
+ assert.match(webhook,/contact_identity_id",identity\.id/);
 });
 
 test("CRM offers governed quick automations and human handoff",()=>{

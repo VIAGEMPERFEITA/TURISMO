@@ -24,13 +24,24 @@ function eventType(field:string,value:Record<string,unknown>){
   return `instagram_${clean(field,60)||"event"}`;
 }
 
-async function handleDirectMessage(admin:any,entry:any,event:any,account:any,supabaseUrl:string,serviceKey:string,workerSecret:string){
+async function selectDirectFlow(admin:any,organizationId:string,text:string){
+  const {data:flows}=await admin.from("automation_flows").select("id,trigger_type,active_version").eq("organization_id",organizationId).eq("channel","instagram").eq("status","active").in("trigger_type",["instagram_keyword","instagram_dm"]);
+  for(const flow of (flows||[]).filter((item:any)=>item.trigger_type==="instagram_keyword")){
+    const {data:version}=await admin.from("automation_versions").select("definition").eq("flow_id",flow.id).eq("version",flow.active_version).maybeSingle();
+    const keywords=Array.isArray(version?.definition?.trigger?.keywords)?version.definition.trigger.keywords:[];
+    if(keywords.some((keyword:unknown)=>text.toLocaleLowerCase("pt-BR").includes(clean(keyword,120).toLocaleLowerCase("pt-BR"))))return flow;
+  }
+  return (flows||[]).find((flow:any)=>flow.trigger_type==="instagram_dm")||null;
+}
+
+async function handleDirectMessage(admin:any,entry:any,event:any,account:any,supabaseUrl:string,serviceKey:string,workerSecret:string,options:{flowId?:string;socialEventId?:string;eventType?:string}={}){
   const message=event?.message||{};
   if(message?.is_echo)return;
   const senderId=clean(event?.sender?.id,180),externalId=clean(message?.mid,220),text=clean(message?.text,4000);
   if(!senderId||!externalId)return;
-  let social=await admin.from("social_events").upsert({organization_id:account.organization_id,channel_account_id:account.id,event_type:"instagram_dm",external_event_id:externalId,payload_redacted:{sender_id:senderId,text:text||null,has_media:Array.isArray(message?.attachments)},received_at:new Date().toISOString()},{onConflict:"organization_id,event_type,external_event_id",ignoreDuplicates:true}).select("id").maybeSingle();
-  if(!social.data) social=await admin.from("social_events").select("id").eq("organization_id",account.organization_id).eq("event_type","instagram_dm").eq("external_event_id",externalId).maybeSingle();
+  const normalizedEventType=options.eventType||"instagram_dm";
+  let social=options.socialEventId?{data:{id:options.socialEventId}}:await admin.from("social_events").upsert({organization_id:account.organization_id,channel_account_id:account.id,event_type:normalizedEventType,external_event_id:externalId,payload_redacted:{sender_id:senderId,text:text||null,has_media:Array.isArray(message?.attachments)},received_at:new Date().toISOString()},{onConflict:"organization_id,event_type,external_event_id",ignoreDuplicates:true}).select("id").maybeSingle();
+  if(!social.data) social=await admin.from("social_events").select("id").eq("organization_id",account.organization_id).eq("event_type",normalizedEventType).eq("external_event_id",externalId).maybeSingle();
   if(!social.data)return;
   const identityResult=await admin.from("contact_identities").select("id,lead_id,customer_id").eq("organization_id",account.organization_id).eq("identity_type","instagram").eq("external_id",senderId).maybeSingle();
   let identity:any=identityResult.data;
@@ -41,6 +52,13 @@ async function handleDirectMessage(admin:any,entry:any,event:any,account:any,sup
     if(created.error)throw created.error;identity=created.data;
   }
   await admin.from("social_events").update({contact_identity_id:identity.id}).eq("id",social.data.id);
+  let flowId=options.flowId||"";
+  if(!flowId&&normalizedEventType==="instagram_dm")flowId=(await selectDirectFlow(admin,account.organization_id,text))?.id||"";
+  if(flowId){
+    const since=new Date(Date.now()-24*60*60*1000).toISOString();
+    const {data:recent}=await admin.from("social_automation_executions").select("id").eq("organization_id",account.organization_id).eq("flow_id",flowId).eq("contact_identity_id",identity.id).gte("started_at",since).in("status",["queued","running","waiting","completed","converted","handed_off"]).limit(1).maybeSingle();
+    if(recent)return;
+  }
   const conversationResult=await admin.from("conversations").select("id,lead_id,customer_id").eq("organization_id",account.organization_id).eq("channel_account_id",account.id).eq("channel","instagram").eq("external_thread_id",senderId).maybeSingle();
   let conversation:any=conversationResult.data;
   if(!conversation){
@@ -50,7 +68,7 @@ async function handleDirectMessage(admin:any,entry:any,event:any,account:any,sup
   const inbound=await admin.from("messages").insert({conversation_id:conversation.id,direction:"entrada",message_type:text?"texto":"sistema",body:text||"Mídia recebida pelo Instagram",external_message_id:externalId,provider:"meta_instagram",author_type:"cliente",delivery_status:"entregue",metadata:{instagram_sender_id:senderId}}).select("id").single();
   if(inbound.error){if(inbound.error.code==="23505")return;throw inbound.error;}
   const consent=await captureWhatsAppConsent(admin,{organizationId:account.organization_id,leadId:identity.lead_id,conversationId:conversation.id,text,source:"instagram_dm"});
-  const execution=await admin.from("social_automation_executions").insert({organization_id:account.organization_id,social_event_id:social.data.id,contact_identity_id:identity.id,channel_account_id:account.id,conversation_id:conversation.id,source_message_id:inbound.data.id,status:"queued",current_step:"ai_queued",messaging_window_expires_at:new Date(Date.now()+24*60*60*1000).toISOString(),input_redacted:{event_type:"instagram_dm",sender_id:senderId}}).select("id").single();
+  const execution=await admin.from("social_automation_executions").insert({organization_id:account.organization_id,flow_id:flowId||null,social_event_id:social.data.id,contact_identity_id:identity.id,channel_account_id:account.id,conversation_id:conversation.id,source_message_id:inbound.data.id,status:"queued",current_step:"ai_queued",messaging_window_expires_at:new Date(Date.now()+24*60*60*1000).toISOString(),input_redacted:{event_type:normalizedEventType,sender_id:senderId}}).select("id").single();
   if(execution.error){if(execution.error.code==="23505")return;throw execution.error;}
   fetch(`${supabaseUrl}/functions/v1/omnichannel-whatsapp-router`,{method:"POST",headers:{Authorization:`Bearer ${serviceKey}`,apikey:serviceKey,"x-worker-secret":workerSecret,"Content-Type":"application/json"},body:JSON.stringify({sourceChannel:"instagram",sourceEventId:social.data.id,sourceConversationId:conversation.id,sourceMessageId:inbound.data.id,leadId:identity.lead_id,consentConfirmed:consent.captured,summary:text||"Mídia recebida pelo Instagram"})}).catch(()=>{});
   if(text&&workerSecret)fetch(`${supabaseUrl}/functions/v1/instagram-ai-orchestrator`,{method:"POST",headers:{Authorization:`Bearer ${serviceKey}`,apikey:serviceKey,"x-worker-secret":workerSecret,"Content-Type":"application/json"},body:JSON.stringify({executionId:execution.data.id})}).catch(()=>{});
@@ -97,7 +115,8 @@ Deno.serve(async request=>{
         if(identity.data)await admin.from("social_events").update({contact_identity_id:identity.data.id}).eq("id",inserted.data.id);
       }
       const {data:flows}=await admin.from("automation_flows").select("id,active_version").eq("organization_id",account.organization_id).eq("channel","instagram").eq("trigger_type",type).eq("status","active");
-      for(const flow of flows||[])await admin.from("social_automation_executions").insert({organization_id:account.organization_id,flow_id:flow.id,social_event_id:inserted.data.id,status:"queued",current_step:"evaluate_trigger",messaging_window_expires_at:new Date(Date.now()+24*60*60*1000).toISOString(),input_redacted:{event_type:type,sender_id:senderId}});
+      const eventText=clean(value?.message?.text||value?.text||value?.comment?.text,4000);
+      if(senderId&&eventText)for(const flow of flows||[])await handleDirectMessage(admin,entry,{sender:{id:senderId},message:{mid:`social:${inserted.data.id}:${flow.id}`,text:eventText}},account,supabaseUrl,serviceKey,workerSecret,{flowId:flow.id,socialEventId:inserted.data.id,eventType:type});
       }
     }
     return json({received:true});
