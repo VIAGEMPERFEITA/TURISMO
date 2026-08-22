@@ -8,6 +8,8 @@ const ui = readFileSync(new URL("../components/admin-commercial-automation.tsx",
 test("executor crítico usa simulação autenticada e grava evidências reais", () => {
   assert.match(runner, /ai-commercial-assistant/);
   assert.match(runner, /simulation: true/);
+  assert.match(runner, /body\.criticalOnly === true/);
+  assert.match(runner, /if \(criticalOnly\) scenarioQuery = scenarioQuery\.eq\("critical", true\)/);
   assert.match(runner, /ai_test_runs/);
   assert.match(runner, /executed_by: profile\.id/);
   assert.match(runner, /\.eq\("critical", true\)/);
@@ -17,5 +19,5 @@ test("executor verifica fontes, transferência, injeção e dados sensíveis", (
   for (const assertion of ["approved_source", "human_handoff", "prompt_injection_refused", "sensitive_data_warning", "unauthorized_action_blocked"]) {
     assert.match(runner, new RegExp(assertion));
   }
-  assert.match(ui, /Executar próximo lote crítico/);
+  assert.match(ui, /Executar próximo lote pendente/);
 });

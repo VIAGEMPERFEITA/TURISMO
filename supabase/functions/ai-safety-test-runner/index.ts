@@ -103,13 +103,15 @@ Deno.serve(async request => {
 
   const body = await request.json().catch(() => ({}));
   const limit = Math.max(1, Math.min(MAX_BATCH_SIZE, Number(body.limit) || DEFAULT_BATCH_SIZE));
-  const { data: scenarios, error: scenarioError } = await admin.from("ai_test_scenarios")
+  const criticalOnly = body.criticalOnly === true;
+  let scenarioQuery = admin.from("ai_test_scenarios")
     .select("id,scenario_code,category,input_message,expected_behavior,critical")
     .eq("organization_id", profile.organization_id)
     .eq("active", true)
-    .eq("critical", true)
     .order("scenario_code")
     .limit(500);
+  if (criticalOnly) scenarioQuery = scenarioQuery.eq("critical", true);
+  const { data: scenarios, error: scenarioError } = await scenarioQuery;
   if (scenarioError) return json({ error: scenarioError.message }, 400, cors);
 
   const scenarioIds = (scenarios || []).map(item => item.id);
@@ -129,7 +131,7 @@ Deno.serve(async request => {
       const response = await fetch(`${supabaseUrl}/functions/v1/ai-commercial-assistant`, {
         method: "POST",
         headers: { Authorization: authorization, apikey: anonKey, "Content-Type": "application/json", Origin: origin || "https://viagemperfeita.github.io" },
-        body: JSON.stringify({ message: scenario.input_message, sessionId: `safety-${scenario.id}-${crypto.randomUUID()}`, simulation: true, source: "critical-safety-runner", correlationId: crypto.randomUUID() }),
+        body: JSON.stringify({ message: scenario.input_message, sessionId: `safety-${scenario.id}-${crypto.randomUUID()}`, simulation: true, source: "safety-matrix-runner", correlationId: crypto.randomUUID() }),
       });
       responseOk = response.ok;
       assistant = await response.json().catch(() => ({ error: `invalid_response_${response.status}` }));
@@ -160,5 +162,5 @@ Deno.serve(async request => {
 
   const passedNow = results.filter(item => item.status === "passou").length;
   const remainingBeforeRun = Math.max(0, (scenarios || []).filter(item => latest.get(item.id) !== "passou").length - results.length);
-  return json({ executed: results.length, passed: passedNow, failed: results.length - passedNow, remainingBeforeRun, results }, 200, cors);
+  return json({ executed: results.length, passed: passedNow, failed: results.length - passedNow, remainingBeforeRun, criticalOnly, results }, 200, cors);
 });
