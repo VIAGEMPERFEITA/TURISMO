@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   CheckCircle2,
+  FileText,
   LoaderCircle,
   MessageCircle,
   RefreshCw,
@@ -13,6 +14,7 @@ import { getSupabaseBrowserClient } from "../lib/supabase-client";
 
 const META_APP_ID = "1295731149305805";
 const META_CONFIGURATION_ID = "4336542926489080";
+const OFFICIAL_PHONE_E164 = "5531995285665";
 const META_SDK_ID = "facebook-jssdk";
 const META_SDK_URLS = [
   "https://connect.facebook.net/pt_BR/sdk.js",
@@ -54,7 +56,8 @@ export function AdminWhatsAppConnection() {
   const [testing, setTesting] = useState(false);
   const [message, setMessage] = useState("");
   const [connected, setConnected] = useState(false);
-  const [displayPhone, setDisplayPhone] = useState("Nenhum número conectado");
+  const [displayPhone, setDisplayPhone] = useState("+55 31 99528-5665");
+  const [readiness, setReadiness] = useState({ webhook: false, approvedTemplates: 0 });
   const signupSession = useRef<SignupSession | null>(null);
   const loginTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -158,20 +161,20 @@ export function AdminWhatsAppConnection() {
 
   useEffect(() => {
     const client = getSupabaseBrowserClient();
-    client
-      ?.from("whatsapp_accounts")
-      .select("status,coexistence_enabled,display_phone")
-      .order("updated_at", { ascending: false })
-      .limit(1)
-      .maybeSingle()
-      .then(({ data, error }) => {
-        if (error) {
-          setMessage("Não foi possível consultar o estado atual do WhatsApp.");
-          return;
-        }
-        setConnected(Boolean(data?.coexistence_enabled && data?.status === "ativo"));
-        if (data?.display_phone) setDisplayPhone(data.display_phone);
-      });
+    if (client) void Promise.all([
+      client.from("whatsapp_accounts").select("status,coexistence_enabled,display_phone,metadata").eq("phone_e164", OFFICIAL_PHONE_E164).maybeSingle(),
+      client.from("message_templates").select("id", { count: "exact", head: true }).eq("status", "aprovado"),
+    ]).then(([accountResult, templateResult]) => {
+      if (accountResult.error) {
+        setMessage("Não foi possível consultar o estado atual do WhatsApp.");
+        return;
+      }
+      const account = accountResult.data;
+      setConnected(Boolean(account?.coexistence_enabled && account?.status === "ativo"));
+      if (account?.display_phone) setDisplayPhone(account.display_phone);
+      const metadata = (account?.metadata ?? {}) as Record<string, unknown>;
+      setReadiness({ webhook: metadata.webhook_subscription === "active", approvedTemplates: templateResult.count ?? 0 });
+    });
 
     const onMessage = (event: MessageEvent) => {
       if (!event.origin.endsWith("facebook.com")) return;
@@ -325,7 +328,7 @@ export function AdminWhatsAppConnection() {
           {connected ? <CheckCircle2 aria-label="Conectado" /> : <MessageCircle />}
         </div>
         <div className={`whatsapp-connection-status ${connected ? "connected" : "pending"}`}>
-          <strong>{connected ? "Conectado em coexistência" : "Aguardando conexão"}</strong>
+          <strong>{connected ? "Conectado em coexistência" : "Aguardando aprovação da Meta"}</strong>
           <span>{displayPhone}</span>
         </div>
         <button
@@ -367,7 +370,7 @@ export function AdminWhatsAppConnection() {
         ) : null}
       </section>
       <section className="crm-panel">
-        <h2>Proteção do aplicativo móvel</h2>
+        <h2>Prontidão operacional</h2>
         <ul className="ai-safety-list">
           <li>
             <Smartphone />
@@ -381,6 +384,20 @@ export function AdminWhatsAppConnection() {
             <span>
               <b>Token protegido</b>
               <small>A credencial é trocada no servidor e armazenada no Vault do Supabase.</small>
+            </span>
+          </li>
+          <li>
+            <ShieldCheck />
+            <span>
+              <b>Webhook {readiness.webhook ? "assinado" : "aguardando conexão"}</b>
+              <small>A assinatura é realizada automaticamente quando a Meta liberar a conta oficial.</small>
+            </span>
+          </li>
+          <li>
+            <FileText />
+            <span>
+              <b>{readiness.approvedTemplates} modelo(s) aprovado(s)</b>
+              <small>Campanhas reais permanecem bloqueadas sem modelo aprovado e sincronizado.</small>
             </span>
           </li>
         </ul>
