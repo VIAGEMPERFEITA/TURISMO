@@ -56,6 +56,7 @@ Deno.serve(async request=>{
   const {data:connected,error:upsertError}=await admin.from("channel_accounts").upsert(account,{onConflict:"organization_id,channel,name"}).select("id").single();
   if(upsertError||!connected)return json({connected:false,error:"account_update_failed"});
   await admin.from("integration_connectors").update({status:"connected",credential_secret_name:secretName,last_sync_at:connectedAt,last_error:null,updated_at:connectedAt}).eq("organization_id",profile.organization_id).eq("name","Instagram Messaging API");
+  await admin.from("integration_health_events").update({status:"resolved",resolved_at:connectedAt}).eq("organization_id",profile.organization_id).eq("provider","instagram").eq("status","open");
   await admin.from("audit_logs").insert({organization_id:profile.organization_id,user_id:oauthState.requested_by,action:"instagram_account_connected",entity_type:"channel_account",entity_id:connected.id,after_data:{external_account_id:externalId,graph_account_id:graphAccountId,username,subscribed_fields:subscribedFields}});
   return json({connected:true,username,externalAccountId:externalId});
 });
