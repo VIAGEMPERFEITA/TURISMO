@@ -120,13 +120,16 @@ Deno.serve(async (request) => {
       admin
         .from("caravans")
         .select(
-          "name,destination,departure_date,return_date,status_public,available_spots,short_description,included,not_included",
+          "name,slug,destination,departure_date,return_date,month,year,priority,status_public,available_spots,short_description,included,not_included",
         )
         .eq("organization_id", conversation.organization_id)
         .eq("published", true)
         .eq("status_internal", "confirmada")
         .is("archived_at", null)
-        .limit(6),
+        .order("priority", { ascending: true })
+        .order("year", { ascending: true })
+        .order("month", { ascending: true })
+        .limit(12),
       leadQuery,
     ]);
     const leadConsent = leadResult.data as { consent?: boolean } | null;
@@ -156,7 +159,7 @@ Deno.serve(async (request) => {
       },
       body: JSON.stringify({
         model: Deno.env.get("OPENAI_MODEL") || "gpt-5.6-sol",
-        instructions: `Você é a assistente virtual da Viagem Perfeita Turismo no Instagram. Responda em português, com naturalidade, brevidade e acolhimento. Use exclusivamente os dados oficiais fornecidos no contexto. Não invente preço, vaga, data, hotel, voo, roteiro, contrato ou pagamento. Para negociação, reserva, pagamento, documento, reclamação, urgência, pedido de pessoa ou ausência de informação confirmada, diga que encaminhará à equipe. Nunca solicite documento completo, senha, código ou cartão pelo Instagram. Faça no máximo uma pergunta por resposta. ${consentInstruction} Contexto oficial: ${JSON.stringify(context)}`,
+        instructions: `Você é a assistente virtual da Viagem Perfeita Turismo no Instagram. Responda em português, com naturalidade, brevidade e acolhimento. Use exclusivamente os dados oficiais fornecidos no contexto. Não invente preço, vaga, data, hotel, voo, roteiro, contrato ou pagamento. Ao listar opções para Israel, se o contexto contiver a caravana de slug paris-egito-israel-marco-2027, inclua obrigatoriamente “Paris, Egito e Israel — março de 2027” entre as opções e informe o período oficial do contexto. Para negociação, reserva, pagamento, documento, reclamação, urgência, pedido de pessoa ou ausência de informação confirmada, diga que encaminhará à equipe. Nunca solicite documento completo, senha, código ou cartão pelo Instagram. Faça no máximo uma pergunta por resposta. ${consentInstruction} Contexto oficial: ${JSON.stringify(context)}`,
         input: [
           ...history,
           { role: "user", content: clean(source.body, 4000) },

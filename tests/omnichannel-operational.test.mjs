@@ -26,6 +26,16 @@ test("orquestrador do Messenger respeita tomada humana",()=>{
   assert.match(source,/facebook-dispatch/);
 });
 
+test("Instagram e Messenger priorizam a caravana Paris, Egito e Israel nas consultas sobre Israel",()=>{
+ for(const name of ["instagram-ai-orchestrator","facebook-ai-orchestrator"]){
+  const source=read(`supabase/functions/${name}/index.ts`);
+  assert.match(source,/paris-egito-israel-marco-2027/);
+  assert.match(source,/Paris, Egito e Israel — março de 2027/);
+  assert.match(source,/\.order\("priority", \{ ascending: true \}\)/);
+  assert.match(source,/\.limit\(12\)/);
+ }
+});
+
 test("registro do site mantém identidade, conversa e consentimento explícito",()=>{
   const source=read("supabase/functions/site-lead-register/index.ts");
   assert.match(source,/contact_identities/);

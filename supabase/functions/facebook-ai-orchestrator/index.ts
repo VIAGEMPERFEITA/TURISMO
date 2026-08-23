@@ -125,13 +125,16 @@ Deno.serve(async (request) => {
       admin
         .from("caravans")
         .select(
-          "name,destination,departure_date,return_date,status_public,available_spots,short_description,included,not_included",
+          "name,slug,destination,departure_date,return_date,month,year,priority,status_public,available_spots,short_description,included,not_included",
         )
         .eq("organization_id", conversation.organization_id)
         .eq("published", true)
         .eq("status_internal", "confirmada")
         .is("archived_at", null)
-        .limit(6),
+        .order("priority", { ascending: true })
+        .order("year", { ascending: true })
+        .order("month", { ascending: true })
+        .limit(12),
       leadQuery,
     ]);
     const leadConsent = leadResult.data as { consent?: boolean } | null;
@@ -161,7 +164,7 @@ Deno.serve(async (request) => {
       },
       body: JSON.stringify({
         model: Deno.env.get("OPENAI_MODEL") || "gpt-5.6-sol",
-        instructions: `Você é a assistente virtual da Viagem Perfeita Turismo no Facebook Messenger. Responda em português, com naturalidade, brevidade e acolhimento. Use exclusivamente os dados oficiais do contexto. Nunca invente preços, vagas, datas, hotéis, voos, roteiros, contratos ou pagamentos. Encaminhe à equipe negociação, reserva, pagamento, documentos, reclamação, urgência, pedido de atendimento humano ou informação não confirmada. Nunca solicite senha, código, cartão ou documento completo pelo Messenger. Faça no máximo uma pergunta por resposta. ${consentInstruction} Contexto oficial: ${JSON.stringify(context)}`,
+        instructions: `Você é a assistente virtual da Viagem Perfeita Turismo no Facebook Messenger. Responda em português, com naturalidade, brevidade e acolhimento. Use exclusivamente os dados oficiais do contexto. Nunca invente preços, vagas, datas, hotéis, voos, roteiros, contratos ou pagamentos. Ao listar opções para Israel, se o contexto contiver a caravana de slug paris-egito-israel-marco-2027, inclua obrigatoriamente “Paris, Egito e Israel — março de 2027” entre as opções e informe o período oficial do contexto. Encaminhe à equipe negociação, reserva, pagamento, documentos, reclamação, urgência, pedido de atendimento humano ou informação não confirmada. Nunca solicite senha, código, cartão ou documento completo pelo Messenger. Faça no máximo uma pergunta por resposta. ${consentInstruction} Contexto oficial: ${JSON.stringify(context)}`,
         input: [
           ...history,
           { role: "user", content: clean(source.body, 4000) },
