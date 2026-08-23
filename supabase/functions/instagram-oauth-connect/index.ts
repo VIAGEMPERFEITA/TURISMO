@@ -7,19 +7,17 @@ const clean=(value:unknown,max=4096)=>typeof value==="string"?value.trim().slice
 Deno.serve(async request=>{
   if(request.method==="OPTIONS")return new Response("ok",{headers});
   if(request.method!=="POST")return json({error:"method_not_allowed"},405);
-  const supabaseUrl=Deno.env.get("SUPABASE_URL")||"",anonKey=Deno.env.get("SUPABASE_ANON_KEY")||"",serviceKey=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
+  const supabaseUrl=Deno.env.get("SUPABASE_URL")||"",serviceKey=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
   const appId=Deno.env.get("META_INSTAGRAM_APP_ID")||"1295731149305805",appSecret=Deno.env.get("META_INSTAGRAM_APP_SECRET")||"";
-  if(!supabaseUrl||!anonKey||!serviceKey||!appSecret)return json({connected:false,error:"service_not_configured"});
+  if(!supabaseUrl||!serviceKey||!appSecret)return json({connected:false,error:"service_not_configured"});
   const body=await request.json().catch(()=>({}));
-  const authorization=request.headers.get("Authorization")||"";
-  const bearer=authorization.startsWith("Bearer ")?authorization.slice(7):"";
-  const sessionToken=clean(body.session_access_token,4096)||bearer;
-  const userClient=createClient(supabaseUrl,anonKey,{auth:{persistSession:false}});
-  const {data:authData}=await userClient.auth.getUser(sessionToken);
-  if(!authData.user)return json({connected:false,error:"authentication_required"});
   const admin=createClient(supabaseUrl,serviceKey,{auth:{persistSession:false}});
-  const {data:profile}=await admin.from("profiles").select("role,organization_id,active").eq("id",authData.user.id).maybeSingle();
+  const stateId=clean(body.state,64);
+  const {data:oauthState}=await admin.from("instagram_oauth_states").select("id,organization_id,requested_by,expires_at,consumed_at").eq("id",stateId).maybeSingle();
+  if(!oauthState||oauthState.consumed_at||new Date(oauthState.expires_at).getTime()<Date.now())return json({connected:false,error:"invalid_or_expired_oauth_state"});
+  const {data:profile}=await admin.from("profiles").select("role,organization_id,active").eq("id",oauthState.requested_by).eq("organization_id",oauthState.organization_id).maybeSingle();
   if(!profile?.active||!["administrador","gestor"].includes(profile.role))return json({connected:false,error:"forbidden"});
+  await admin.from("instagram_oauth_states").update({consumed_at:new Date().toISOString()}).eq("id",oauthState.id).is("consumed_at",null);
   const code=clean(body.code,2048),redirectUri=clean(body.redirect_uri,1024);
   if(!code||!redirectUri)return json({connected:false,error:"incomplete_oauth_data"});
   const expected="https://viagemperfeita.github.io/TURISMO/admin/configuracoes/";
@@ -58,6 +56,6 @@ Deno.serve(async request=>{
   const {data:connected,error:upsertError}=await admin.from("channel_accounts").upsert(account,{onConflict:"organization_id,channel,name"}).select("id").single();
   if(upsertError||!connected)return json({connected:false,error:"account_update_failed"});
   await admin.from("integration_connectors").update({status:"connected",credential_secret_name:secretName,last_sync_at:connectedAt,last_error:null,updated_at:connectedAt}).eq("organization_id",profile.organization_id).eq("name","Instagram Messaging API");
-  await admin.from("audit_logs").insert({organization_id:profile.organization_id,user_id:authData.user.id,action:"instagram_account_connected",entity_type:"channel_account",entity_id:connected.id,after_data:{external_account_id:externalId,graph_account_id:graphAccountId,username,subscribed_fields:subscribedFields}});
+  await admin.from("audit_logs").insert({organization_id:profile.organization_id,user_id:oauthState.requested_by,action:"instagram_account_connected",entity_type:"channel_account",entity_id:connected.id,after_data:{external_account_id:externalId,graph_account_id:graphAccountId,username,subscribed_fields:subscribedFields}});
   return json({connected:true,username,externalAccountId:externalId});
 });
