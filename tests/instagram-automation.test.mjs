@@ -10,6 +10,7 @@ const dispatch=fs.readFileSync("supabase/functions/instagram-dispatch/index.ts",
 const ui=fs.readFileSync("components/admin-instagram-automation.tsx","utf8");
 const route=fs.readFileSync("app/admin/[module]/page.tsx","utf8");
 const oauth=fs.readFileSync("supabase/functions/instagram-oauth-connect/index.ts","utf8");
+const activation=fs.readFileSync("supabase/migrations/202608230003_activate_validated_instagram_flows.sql","utf8");
 
 test("Instagram automation is tenant-safe, auditable and blocked before connection",()=>{
  assert.match(migration,/social_automation_executions/);
@@ -76,4 +77,12 @@ test("Instagram OAuth callback resolves stale credential alerts after reconnecti
  assert.match(oauth,/integration_health_events/);
  assert.match(oauth,/status:"resolved",resolved_at:connectedAt/);
  assert.match(oauth,/\.eq\("provider","instagram"\)\.eq\("status","open"\)/);
+});
+
+test("ativação aprovada libera somente os quatro fluxos validados e exige canal e IA prontos",()=>{
+ for(const name of ["Atendimento automático no Direct","Menção ou resposta ao Story","Palavra-chave no Direct","Comentário para conversa"])assert.match(activation,new RegExp(name));
+ assert.match(activation,/activated_count<>4/);
+ assert.match(activation,/instagram_connector_not_ready/);
+ assert.match(activation,/ai_not_ready/);
+ assert.match(activation,/validated_matrix','196\/196'/);
 });
