@@ -40,6 +40,7 @@ Deno.serve(async request=>{
     if(/meta_401_|_190_|_102_/.test(message)){
       const occurredAt=new Date().toISOString();
       await admin.from("channel_accounts").update({status:"degraded",last_error:"messenger_access_token_invalid",updated_at:occurredAt}).eq("id",outbound.channel_account_id);
+      await admin.from("integration_connectors").update({status:"degraded",last_error:"messenger_access_token_invalid",updated_at:occurredAt}).eq("organization_id",outbound.organization_id).eq("name","Facebook Messenger API");
       await admin.from("integration_health_events").insert({organization_id:outbound.organization_id,provider:"messenger",event_type:"credential_invalid",severity:"critical",details:{channel_account_id:outbound.channel_account_id,outbound_id:outbound.id}});
     }
     return json({status:"falhou",retryAt:nextAttempt},502);
