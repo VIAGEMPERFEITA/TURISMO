@@ -17,7 +17,7 @@ const labels:Record<string,string>={instagram_comment:"Comentário",instagram_ke
 // The Instagram Business Login app is a child app of the main Meta app and
 // therefore has its own application id and secret.
 const INSTAGRAM_APP_ID="934096495646187",INSTAGRAM_REDIRECT_URI="https://viagemperfeita.github.io/TURISMO/admin/configuracoes/";
-async function exchangeInstagramCode(client:NonNullable<ReturnType<typeof getSupabaseBrowserClient>>,code:string){const{data:{session}}=await client.auth.getSession();return client.functions.invoke("instagram-oauth-connect",{body:{code,redirect_uri:INSTAGRAM_REDIRECT_URI},headers:session?.access_token?{Authorization:`Bearer ${session.access_token}`}:{}})}
+async function exchangeInstagramCode(client:NonNullable<ReturnType<typeof getSupabaseBrowserClient>>,code:string){const{data:{session}}=await client.auth.getSession();return client.functions.invoke("instagram-oauth-connect",{body:{code,redirect_uri:INSTAGRAM_REDIRECT_URI,session_access_token:session?.access_token??null}})}
 
 export function AdminInstagramOAuthCallback(){
  const[notice,setNotice]=useState("");
