@@ -13,7 +13,7 @@ Deno.serve(async request=>{
   const admin=createClient(supabaseUrl,serviceKey,{auth:{persistSession:false}});
   const outboundId=clean((await request.json().catch(()=>({})))?.outboundId,64);
   if(!outboundId)return json({error:"outbound_id_required"},400);
-  const {data:outbound}=await admin.from("messenger_outbound_messages").select("id,channel_account_id,message_id,recipient_id,payload,status,attempts,channel_accounts!inner(external_account_id,status,credential_secret_name)").eq("id",outboundId).single();
+  const {data:outbound}=await admin.from("messenger_outbound_messages").select("id,organization_id,channel_account_id,message_id,recipient_id,payload,status,attempts,channel_accounts!inner(external_account_id,status,credential_secret_name)").eq("id",outboundId).single();
   if(!outbound)return json({error:"outbound_not_found"},404);
   if(["enviado","entregue","lido","cancelado"].includes(outbound.status))return json({status:outbound.status,idempotent:true});
   const account=(Array.isArray(outbound.channel_accounts)?outbound.channel_accounts[0]:outbound.channel_accounts) as MessengerAccount|null;
@@ -37,6 +37,11 @@ Deno.serve(async request=>{
     const nextAttempt=new Date(Date.now()+Math.min(60,2**Math.min(outbound.attempts,5))*60000).toISOString();
     await admin.from("messenger_outbound_messages").update({status:"falhou",last_error:message,next_attempt_at:nextAttempt,updated_at:new Date().toISOString()}).eq("id",outbound.id);
     if(outbound.message_id)await admin.from("messages").update({delivery_status:"falhou",error_message:message}).eq("id",outbound.message_id);
+    if(/meta_401_|_190_|_102_/.test(message)){
+      const occurredAt=new Date().toISOString();
+      await admin.from("channel_accounts").update({status:"degraded",last_error:"messenger_access_token_invalid",updated_at:occurredAt}).eq("id",outbound.channel_account_id);
+      await admin.from("integration_health_events").insert({organization_id:outbound.organization_id,provider:"messenger",event_type:"credential_invalid",severity:"critical",details:{channel_account_id:outbound.channel_account_id,outbound_id:outbound.id}});
+    }
     return json({status:"falhou",retryAt:nextAttempt},502);
   }
 });

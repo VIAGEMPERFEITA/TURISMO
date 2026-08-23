@@ -51,7 +51,12 @@ Deno.serve(async request=>{
     const nextAttempt=new Date(Date.now()+Math.min(60,2**Math.min(outbound.attempts,5))*60000).toISOString();
     await admin.from("instagram_outbound_messages").update({status:"falhou",last_error:message,next_attempt_at:nextAttempt,updated_at:new Date().toISOString()}).eq("id",outbound.id);
     if(outbound.message_id)await admin.from("messages").update({delivery_status:"falhou",error_message:message}).eq("id",outbound.message_id);
-    if(/meta_401_|_190_|_102_/.test(message))await admin.from("channel_accounts").update({status:"error",last_error:"instagram_access_token_invalid",updated_at:new Date().toISOString()}).eq("id",outbound.channel_account_id);
+    if(/meta_401_|_190_|_102_/.test(message)){
+      const occurredAt=new Date().toISOString();
+      await admin.from("channel_accounts").update({status:"degraded",last_error:"instagram_access_token_invalid",updated_at:occurredAt}).eq("id",outbound.channel_account_id);
+      await admin.from("integration_connectors").update({status:"degraded",last_error:"instagram_access_token_invalid",updated_at:occurredAt}).eq("organization_id",outbound.organization_id).eq("provider","meta").eq("connector_type","social_messaging");
+      await admin.from("integration_health_events").insert({organization_id:outbound.organization_id,provider:"instagram",event_type:"credential_invalid",severity:"critical",details:{channel_account_id:outbound.channel_account_id,outbound_id:outbound.id}});
+    }
     return json({status:"falhou",retryAt:nextAttempt},502);
   }
 });
