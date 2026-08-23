@@ -28,15 +28,15 @@ Deno.serve(async request=>{
   const shortResponse=await fetch("https://api.instagram.com/oauth/access_token",{method:"POST",body:form});
   const shortData=await shortResponse.json().catch(()=>({}));
   const shortToken=clean(shortData.access_token),instagramUserId=clean(String(shortData.user_id??""),180);
-  if(!shortResponse.ok||!shortToken||!instagramUserId)return json({error:"instagram_token_exchange_failed"},502);
+  if(!shortResponse.ok||!shortToken||!instagramUserId)return json({error:"instagram_token_exchange_failed",provider_code:clean(shortData?.error_type||shortData?.error?.code,48)},502);
   const longUrl=new URL("https://graph.instagram.com/access_token");
   longUrl.searchParams.set("grant_type","ig_exchange_token");longUrl.searchParams.set("client_secret",appSecret);longUrl.searchParams.set("access_token",shortToken);
   const longResponse=await fetch(longUrl);const longData=await longResponse.json().catch(()=>({}));
   const accessToken=clean(longData.access_token)||shortToken;
-  if(!longResponse.ok||!accessToken)return json({error:"instagram_long_token_failed"},502);
+  if(!longResponse.ok||!accessToken)return json({error:"instagram_long_token_failed",provider_code:clean(longData?.error?.code,48)},502);
   const profileUrl=new URL("https://graph.instagram.com/v25.0/me");profileUrl.searchParams.set("fields","user_id,username,name,profile_picture_url");profileUrl.searchParams.set("access_token",accessToken);
   const accountResponse=await fetch(profileUrl);const accountData=await accountResponse.json().catch(()=>({}));
-  if(!accountResponse.ok)return json({error:"instagram_account_validation_failed"},502);
+  if(!accountResponse.ok)return json({error:"instagram_account_validation_failed",provider_code:clean(accountData?.error?.code,48)},502);
   const graphAccountId=clean(String(accountData.id||instagramUserId),180);
   const externalId=clean(String(accountData.user_id||accountData.id||""),180)||instagramUserId,username=clean(accountData.username,160)||"viagemperfeitatrip";
   const subscribedFields=["messages","message_reactions","messaging_postbacks","messaging_seen","messaging_referral","comments","live_comments","mentions"];
@@ -47,7 +47,7 @@ Deno.serve(async request=>{
     body:JSON.stringify({subscribed_fields:subscribedFields}),
   });
   const subscriptionData=await subscriptionResponse.json().catch(()=>({}));
-  if(!subscriptionResponse.ok||subscriptionData?.success!==true)return json({error:"instagram_webhook_subscription_failed"},502);
+  if(!subscriptionResponse.ok||subscriptionData?.success!==true)return json({error:"instagram_webhook_subscription_failed",provider_code:clean(subscriptionData?.error?.code,48)},502);
   const secretName=`meta_instagram_${profile.organization_id}_${externalId}`;
   const {error:vaultError}=await admin.rpc("store_instagram_access_token",{target_secret_name:secretName,target_access_token:accessToken});
   if(vaultError)return json({error:"token_vault_failed"},500);
@@ -55,7 +55,7 @@ Deno.serve(async request=>{
   const account={organization_id:profile.organization_id,channel:"instagram",name:`Instagram @${username}`,provider:"meta",external_account_id:externalId,status:"connected",credential_secret_name:secretName,webhook_secret_name:"META_INSTAGRAM_VERIFY_TOKEN",scopes:["instagram_business_basic","instagram_business_manage_messages","instagram_business_manage_comments","instagram_business_content_publish"],capabilities:{direct:true,comments:true,content_publish:true,human_handoff:true},settings:{username,profile_picture_url:clean(accountData.profile_picture_url,1024)||null,token_expires_in:Number(longData.expires_in||0),connected_at:connectedAt},last_sync_at:connectedAt,last_error:null,updated_at:connectedAt};
   const {data:connected,error:upsertError}=await admin.from("channel_accounts").upsert(account,{onConflict:"organization_id,channel,name"}).select("id").single();
   if(upsertError||!connected)return json({error:"account_update_failed"},500);
-  await admin.from("integration_connectors").update({status:"connected",credential_secret_name:secretName,last_sync_at:connectedAt,last_error:null,updated_at:connectedAt}).eq("organization_id",profile.organization_id).eq("provider","meta").eq("connector_type","social_messaging");
+  await admin.from("integration_connectors").update({status:"connected",credential_secret_name:secretName,last_sync_at:connectedAt,last_error:null,updated_at:connectedAt}).eq("organization_id",profile.organization_id).eq("name","Instagram Messaging API");
   await admin.from("audit_logs").insert({organization_id:profile.organization_id,user_id:authData.user.id,action:"instagram_account_connected",entity_type:"channel_account",entity_id:connected.id,after_data:{external_account_id:externalId,graph_account_id:graphAccountId,username,subscribed_fields:subscribedFields}});
   return json({connected:true,username,externalAccountId:externalId});
 });

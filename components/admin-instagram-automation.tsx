@@ -20,7 +20,7 @@ const INSTAGRAM_APP_ID="934096495646187",INSTAGRAM_REDIRECT_URI="https://viagemp
 
 export function AdminInstagramOAuthCallback(){
  const[notice,setNotice]=useState("");
- useEffect(()=>{const code=new URLSearchParams(window.location.search).get("code");if(!code)return;const client=getSupabaseBrowserClient();if(!client)return;setNotice("Concluindo a conexão segura do Instagram…");client.functions.invoke("instagram-oauth-connect",{body:{code,redirect_uri:INSTAGRAM_REDIRECT_URI}}).then(({data,error})=>{window.history.replaceState({},"",window.location.pathname);setNotice(error||!data?.connected?"A Meta autorizou o acesso, mas a conexão operacional não foi concluída. Tente novamente.":`Instagram @${data.username} conectado com segurança.`)})},[]);
+ useEffect(()=>{const code=new URLSearchParams(window.location.search).get("code");if(!code)return;const client=getSupabaseBrowserClient();if(!client)return;setNotice("Concluindo a conexão segura do Instagram…");client.functions.invoke("instagram-oauth-connect",{body:{code,redirect_uri:INSTAGRAM_REDIRECT_URI}}).then(({data,error})=>{window.history.replaceState({},"",window.location.pathname);setNotice(error||!data?.connected?`A Meta autorizou, mas a conexão falhou na etapa: ${data?.error??"resposta do servidor"}${data?.provider_code?` (${data.provider_code})`:""}.`:`Instagram @${data.username} conectado com segurança.`)})},[]);
  return notice?<div className="crm-alert" role="status">{notice}</div>:null;
 }
 
