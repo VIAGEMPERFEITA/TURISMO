@@ -115,6 +115,27 @@ Deno.serve(async request => {
         const deliveryStatus = normalizedStatus === "excluido" ? null : normalizedStatus;
         if (outbound?.id && deliveryStatus) await admin.from("whatsapp_outbound_messages").update({ status: deliveryStatus, updated_at: new Date().toISOString() }).eq("id", outbound.id);
         if (outbound?.message_id && deliveryStatus) await admin.from("messages").update({ delivery_status: deliveryStatus }).eq("id", outbound.message_id);
+        if (outbound?.message_id && deliveryStatus) {
+          const { data: sourceMessage } = await admin.from("messages").select("metadata").eq("id", outbound.message_id).maybeSingle();
+          const campaignId = clean(sourceMessage?.metadata?.campaign_id, 64);
+          const recipientId = clean(sourceMessage?.metadata?.recipient_id, 64);
+          if (campaignId && recipientId) {
+            const recipientStatus: Record<string, string> = { enviado: "enviada", entregue: "entregue", lido: "lida", falhou: "falhou" };
+            const nextStatus = recipientStatus[deliveryStatus];
+            const timestamp = status?.timestamp ? new Date(Number(status.timestamp) * 1000).toISOString() : new Date().toISOString();
+            if (nextStatus) await admin.from("campaign_recipients").update({
+              status: nextStatus,
+              provider_message_id: externalId,
+              sent_at: nextStatus === "enviada" ? timestamp : undefined,
+              delivered_at: nextStatus === "entregue" ? timestamp : undefined,
+              read_at: nextStatus === "lida" ? timestamp : undefined,
+              last_error_code: nextStatus === "falhou" ? clean(status?.errors?.[0]?.code, 80) || "provider_failed" : null,
+              last_error_message: nextStatus === "falhou" ? clean(status?.errors?.[0]?.title || status?.errors?.[0]?.message, 500) || "provider_failed" : null,
+              updated_at: new Date().toISOString(),
+            }).eq("id", recipientId).eq("campaign_id", campaignId);
+            await admin.from("message_events").upsert({ organization_id: account.organization_id, campaign_id: campaignId, recipient_id: recipientId, provider_event_id: statusEventId, event_type: `provider_${nextStatus || deliveryStatus}`, provider_timestamp: timestamp, payload: status }, { onConflict: "organization_id,provider_event_id", ignoreDuplicates: true });
+          }
+        }
       }
 
       for (const message of value.messages || []) {
@@ -193,6 +214,13 @@ Deno.serve(async request => {
             sent_at: providerTimestamp,
           }).select("id").single();
           if (inserted.error) throw inserted.error;
+          const { data: repliedRecipient } = await admin.from("campaign_recipients").select("id,campaign_id")
+            .eq("organization_id", account.organization_id).eq("phone_e164", waId)
+            .in("status", ["enviada", "entregue", "lida"]).order("sent_at", { ascending: false }).limit(1).maybeSingle();
+          if (repliedRecipient) {
+            await admin.from("campaign_recipients").update({ status: "respondida", replied_at: providerTimestamp, updated_at: new Date().toISOString() }).eq("id", repliedRecipient.id);
+            await admin.from("message_events").insert({ organization_id: account.organization_id, campaign_id: repliedRecipient.campaign_id, recipient_id: repliedRecipient.id, provider_event_id: `reply:${externalId}`, event_type: "customer_replied", provider_timestamp: providerTimestamp, payload: { inbound_message_id: inserted.data.id } });
+          }
           await admin.from("conversations").update({
             last_customer_message_at: providerTimestamp,
             last_message_at: providerTimestamp,

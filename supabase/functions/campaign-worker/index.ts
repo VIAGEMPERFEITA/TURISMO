@@ -13,12 +13,13 @@ Deno.serve(async request=>{
  const admin=createClient(supabaseUrl,serviceKey,{auth:{persistSession:false}});
  const campaignId=clean((await request.json().catch(()=>({})))?.campaignId,64);
  if(!campaignId)return json({error:"campaign_id_required"},400);
- const{data:campaign}=await admin.from("campaigns").select("id,organization_id,status,simulation_mode,batch_size,error_pause_threshold,template_id,message_snapshot,scheduled_at").eq("id",campaignId).maybeSingle();
+ const{data:campaign}=await admin.from("campaigns").select("id,organization_id,status,simulation_mode,batch_size,interval_seconds,error_pause_threshold,template_id,message_snapshot,scheduled_at").eq("id",campaignId).maybeSingle();
  if(!campaign)return json({error:"campaign_not_found"},404);
  if(!["agendada","em_andamento"].includes(campaign.status)&&!campaign.simulation_mode)return json({error:"campaign_not_released"},409);
  const{data:integration}=await admin.from("integration_settings").select("enabled,simulation_mode,credentials_configured").eq("organization_id",campaign.organization_id).eq("provider","whatsapp_cloud_api").maybeSingle();
  const simulation=campaign.simulation_mode||integration?.simulation_mode!==false||integration?.enabled!==true||integration?.credentials_configured!==true;
  const now=new Date().toISOString();
+ if(campaign.scheduled_at&&new Date(campaign.scheduled_at).getTime()>Date.now())return json({status:"scheduled",simulation,processed:0,queued:0,blocked:0,next_batch_at:campaign.scheduled_at});
  const{data:recipients,error}=await admin.from("campaign_recipients").select("id,lead_id,customer_id,phone_e164,display_name,variables,status,attempts,scheduled_at").eq("campaign_id",campaign.id).in("status",["pendente","agendada","na_fila","falhou"]).lte("attempts",4).or(`scheduled_at.is.null,scheduled_at.lte.${now}`).order("created_at").limit(campaign.batch_size||50);
  if(error)return json({error:"queue_read_failed"},500);
  if(!recipients?.length)return json({status:"idle",simulation,processed:0,queued:0,blocked:0});
@@ -84,6 +85,26 @@ Deno.serve(async request=>{
   fetch(`${supabaseUrl}/functions/v1/whatsapp-dispatch`,{method:"POST",headers:{Authorization:`Bearer ${serviceKey}`,apikey:serviceKey,"x-worker-secret":workerSecret,"Content-Type":"application/json"},body:JSON.stringify({outboundId:out.data.id})}).catch(()=>{});
   queued+=1;
  }
- await admin.from("campaign_audit_logs").insert({organization_id:campaign.organization_id,campaign_id:campaign.id,action:"worker_batch",metadata:{simulation,processed,queued,blocked,duplicates}});
- return json({status:simulation?"simulated":"queued_for_official_dispatch",simulation,processed,queued,blocked,duplicates});
+ const [{count:failedCount},{count:completedCount},{count:remainingCount}]=await Promise.all([
+  admin.from("campaign_recipients").select("id",{count:"exact",head:true}).eq("campaign_id",campaign.id).eq("status","falhou"),
+  admin.from("campaign_recipients").select("id",{count:"exact",head:true}).eq("campaign_id",campaign.id).in("status",["enviada","entregue","lida","respondida","bloqueada","descadastrada","cancelada"]),
+  admin.from("campaign_recipients").select("id",{count:"exact",head:true}).eq("campaign_id",campaign.id).in("status",["pendente","agendada","na_fila","processando","falhou"]),
+ ]);
+ const total=(failedCount||0)+(completedCount||0)+(remainingCount||0);
+ const failureRate=total?Math.round((failedCount||0)*10000/total)/100:0;
+ const autoPaused=!simulation&&total>=10&&failureRate>=Number(campaign.error_pause_threshold||10);
+ const finished=(remainingCount||0)===0;
+ const nextBatchAt=new Date(Date.now()+Math.max(0,Number(campaign.interval_seconds||1))*1000).toISOString();
+ await admin.from("campaigns").update({
+  status:autoPaused?"pausada":finished?"concluida":campaign.status==="agendada"?"em_andamento":campaign.status,
+  failure_rate:failureRate,
+  pause_reason:autoPaused?"limite_automatico_de_falhas":null,
+  paused_at:autoPaused?new Date().toISOString():null,
+  completed_at:finished?new Date().toISOString():null,
+  last_worker_at:new Date().toISOString(),
+  next_batch_at:autoPaused||finished?null:nextBatchAt,
+  updated_at:new Date().toISOString(),
+ }).eq("id",campaign.id);
+ await admin.from("campaign_audit_logs").insert({organization_id:campaign.organization_id,campaign_id:campaign.id,action:autoPaused?"worker_auto_paused":finished?"worker_completed":"worker_batch",metadata:{simulation,processed,queued,blocked,duplicates,failure_rate:failureRate,next_batch_at:autoPaused||finished?null:nextBatchAt}});
+ return json({status:autoPaused?"auto_paused":finished?"completed":simulation?"simulated":"queued_for_official_dispatch",simulation,processed,queued,blocked,duplicates,failure_rate:failureRate,next_batch_at:autoPaused||finished?null:nextBatchAt});
 });
