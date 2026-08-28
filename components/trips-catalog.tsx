@@ -35,7 +35,7 @@ export function TripsCatalog({ trips }: { trips: Trip[] }) {
   },[]);
   useEffect(()=>{
     const params=new URLSearchParams(window.location.search);Object.entries(filters).forEach(([key,value])=>value?params.set(key,value===true?"1":String(value)):params.delete(key));
-    sort!=="nearest"?params.set("sort",sort):params.delete("sort");const query=params.toString();window.history.replaceState(null,"",`${window.location.pathname}${query?`?${query}`:""}${window.location.hash}`);
+    if(sort!=="nearest")params.set("sort",sort);else params.delete("sort");const query=params.toString();window.history.replaceState(null,"",`${window.location.pathname}${query?`?${query}`:""}${window.location.hash}`);
   },[filters,sort]);
 
   const options = useMemo(() => ({

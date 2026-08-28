@@ -9,8 +9,6 @@ type Member = { id: string; full_name: string; email: string; role: string; acti
 type Invitation = { id: string; email: string; role: string; expires_at: string; accepted_at: string | null };
 type Organization = { id: string; name: string; slug: string; active: boolean };
 
-const errorText = (error: unknown) => error instanceof Error ? error.message : "Não foi possível concluir a operação.";
-
 export function AdminTeamManagement() {
   const [members, setMembers] = useState<Member[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);

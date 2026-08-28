@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Bot, Cable, Camera, CheckCircle2, ShieldCheck, Workflow } from "lucide-react";
 import { getSupabaseBrowserClient } from "../lib/supabase-client";
+import { AdminLaunchReadiness } from "./admin-launch-readiness";
 
 const configurations = {
   automacoes: { table: "automation_flows", title: "Automações", description: "Fluxos versionados, limites de frequência, horário silencioso e parada de emergência.", icon: Workflow },
@@ -41,7 +42,7 @@ export function AdminYoavFoundation({ module }: { module: Module }) {
     return () => window.clearTimeout(timer);
   }, [load]);
 
-  return <section className="crm-panel">
+  const modulePanel = <section className="crm-panel">
     <div className="crm-panel-head"><div><Icon/><h2>{config.title}</h2></div><span><ShieldCheck/> Governança ativa</span></div>
     <p>{config.description}</p>
     {module === "conteudo-social" ? <div className="crm-alert" role="status">
@@ -55,4 +56,5 @@ export function AdminYoavFoundation({ module }: { module: Module }) {
       {!rows.length && !notice ? <tr><td colSpan={4}>Nenhum registro criado. O ambiente permanece seguro e sem ativações externas automáticas.</td></tr> : null}
     </tbody></table></div>
   </section>;
+  return module === "integracoes" ? <div className="crm-report-grid"><AdminLaunchReadiness/>{modulePanel}</div> : modulePanel;
 }

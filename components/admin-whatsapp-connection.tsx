@@ -204,6 +204,8 @@ export function AdminWhatsAppConnection() {
       window.removeEventListener("message", onMessage);
       if (loginTimeout.current) clearTimeout(loginTimeout.current);
     };
+    // O SDK e o listener devem ser registrados uma única vez durante a montagem.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function connect() {
