@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { AlertTriangle, CheckCircle2, Clock3, RefreshCw, ShieldCheck } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock3, FlaskConical, PauseCircle, RefreshCw, ShieldCheck } from "lucide-react";
 import { getSupabaseBrowserClient } from "../lib/supabase-client";
 
 type Channel = { provider: string; enabled: boolean; simulation: boolean; credentials: boolean };
@@ -36,6 +36,7 @@ export function AdminLaunchReadiness() {
   const [preflight, setPreflight] = useState<Preflight | null>(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
+  const [lastOperation, setLastOperation] = useState<Record<string, unknown> | null>(null);
 
   const load = useCallback(async () => {
     const client = getSupabaseBrowserClient();
@@ -61,6 +62,28 @@ export function AdminLaunchReadiness() {
 
   useEffect(() => { void load(); }, [load]);
 
+  const runSafeOperation = async (operation: "guardian" | "simulation") => {
+    const client = getSupabaseBrowserClient(); if (!client) return;
+    setLoading(true);
+    const rpc = operation === "guardian" ? "run_operational_guardian" : "simulate_omnichannel_preflight";
+    const { data, error } = await client.rpc(rpc);
+    setLastOperation((data ?? null) as Record<string, unknown> | null);
+    setMessage(error ? "Não foi possível concluir o diagnóstico." : operation === "guardian" ? "Diagnóstico operacional concluído." : "Simulação multicanal concluída sem envio externo.");
+    await load();
+  };
+
+  const emergencyStop = async () => {
+    if (!window.confirm("Confirmar parada de emergência? Fluxos serão pausados, campanhas reais serão bloqueadas e as integrações voltarão à simulação.")) return;
+    const reason = window.prompt("Informe o motivo operacional da parada (mínimo de 10 caracteres):");
+    if (!reason || reason.trim().length < 10) { setMessage("A parada exige um motivo com pelo menos 10 caracteres."); return; }
+    const client = getSupabaseBrowserClient(); if (!client) return;
+    setLoading(true);
+    const { data, error } = await client.rpc("emergency_stop_omnichannel", { stop_reason: reason.trim() });
+    setLastOperation((data ?? null) as Record<string, unknown> | null);
+    setMessage(error ? "A parada de emergência não foi aplicada." : "Parada de emergência aplicada e registrada.");
+    await load();
+  };
+
   const imported = readiness?.imported_contacts ?? {};
   const webhookActive = whatsapp?.metadata?.webhook_subscription === "active";
   const whatsappReady = whatsapp?.status === "ativo" && whatsapp.coexistence_enabled && webhookActive;
@@ -83,7 +106,9 @@ export function AdminLaunchReadiness() {
     <div className="crm-panel-head"><div><ShieldCheck/><h2>Prontidão para lançamento</h2><p>Diagnóstico consolidado sem executar mensagens ou ativações externas.</p></div><button onClick={load} disabled={loading}><RefreshCw className={loading ? "spin" : ""}/>Atualizar</button></div>
     {message ? <div className="crm-alert">{message}</div> : null}
     <div className="campaign-rates"><span>Itens prontos <b>{readyCount}/{checks.length}</b></span><span>Não lidas <b>{readiness?.unread_conversations ?? 0}</b></span><span>Modo seguro <b>Ativo</b></span></div>
+    <div className="crm-inline-actions"><button onClick={() => void runSafeOperation("guardian")} disabled={loading}><ShieldCheck/>Executar diagnóstico</button><button onClick={() => void runSafeOperation("simulation")} disabled={loading}><FlaskConical/>Simular três canais</button><button onClick={() => void emergencyStop()} disabled={loading}><PauseCircle/>Parada de emergência</button></div>
     <ul className="ai-safety-list">{checks.map(item => <li key={item.label}>{item.ready ? <CheckCircle2/> : item.label.includes("Meta") || item.label.includes("Modelos") ? <Clock3/> : <AlertTriangle/>}<span><b>{item.label}</b><small>{item.detail}</small></span></li>)}</ul>
+    {lastOperation ? <details><summary>Resultado da última operação</summary><pre>{JSON.stringify(lastOperation, null, 2)}</pre></details> : null}
     <p className="crm-muted">A aprovação da Meta, a criação de acesso persistente e qualquer envio real continuam exigindo validação no momento da ação.</p>
   </section>;
 }

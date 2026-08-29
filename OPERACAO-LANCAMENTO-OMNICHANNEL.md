@@ -66,6 +66,14 @@ Este documento é o roteiro seguro para concluir CRM, IA, Instagram, Messenger e
 - Gere novo snapshot com `create_operational_recovery_snapshot()` antes de liberar envios reais.
 - Em incidente, ative `real_send_locked`, pause campanhas e preserve históricos, consentimentos e filas para auditoria.
 
+### Rotina operacional antecipada
+
+- Execute `run_operational_guardian()` diariamente e após qualquer troca de token; ele registra evidências e abre ou resolve alertas.
+- Use `simulate_omnichannel_preflight()` para validar Instagram, Messenger, WhatsApp e IA sem envio externo.
+- Consulte `audit_contact_governance()` antes de formar qualquer público e `channel_delivery_metrics()` durante a operação.
+- A parada de emergência exige administrador, motivo auditável e confirma explicitamente a mudança para simulação.
+- A recuperação começa com `preview_operational_recovery()`; qualquer restauração efetiva deve permanecer uma ação separada e explicitamente autorizada.
+
 ## 7. Aprovação e lançamento
 
 1. Confirmar aprovação de `instagram_business_basic` e `instagram_business_manage_messages`.
