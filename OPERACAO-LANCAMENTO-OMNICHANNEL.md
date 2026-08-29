@@ -46,6 +46,25 @@ Este documento é o roteiro seguro para concluir CRM, IA, Instagram, Messenger e
 - Executar build GitHub Pages e lint.
 - Usar somente contas de teste/autorizadas; não enviar campanhas reais.
 - Simular o número oficial, modelos e campanha no banco sem chamar o endpoint de envio da Meta.
+- Consultar `meta_prelaunch_preflight()` e exigir zero token vencido, zero dead-letter e zero item travado.
+- O limite inicial é 50 mensagens por hora e 200 por 24 horas; aumentar somente após observar entrega e ausência de bloqueios.
+- `real_send_locked` permanece ativo até o teste controlado e a aprovação operacional.
+
+### Matriz do teste controlado
+
+1. Receber uma mensagem de conta autorizada e conferir persistência idempotente.
+2. Confirmar resposta da IA somente com fonte aprovada.
+3. Pedir atendente e conferir `aguardando_equipe`, tomada humana e pausa da IA.
+4. Responder como atendente e devolver à IA com resumo de contexto.
+5. Simular erro transitório e conferir retentativa exponencial; após cinco falhas, conferir dead-letter.
+6. Simular `SAIR` e confirmar revogação, supressão e bloqueio de campanhas.
+7. Repetir o mesmo evento e confirmar ausência de mensagem duplicada.
+
+### Backup e recuperação
+
+- Um snapshot sem segredos registra integrações, fluxos, modelos e campanhas ativas antes do lançamento.
+- Gere novo snapshot com `create_operational_recovery_snapshot()` antes de liberar envios reais.
+- Em incidente, ative `real_send_locked`, pause campanhas e preserve históricos, consentimentos e filas para auditoria.
 
 ## 7. Aprovação e lançamento
 

@@ -13,14 +13,27 @@ Deno.serve(async request=>{
  const admin=createClient(supabaseUrl,serviceKey,{auth:{persistSession:false}});
  const campaignId=clean((await request.json().catch(()=>({})))?.campaignId,64);
  if(!campaignId)return json({error:"campaign_id_required"},400);
- const{data:campaign}=await admin.from("campaigns").select("id,organization_id,status,simulation_mode,batch_size,interval_seconds,error_pause_threshold,template_id,message_snapshot,scheduled_at").eq("id",campaignId).maybeSingle();
+ const{data:campaign}=await admin.from("campaigns").select("id,organization_id,status,simulation_mode,batch_size,interval_seconds,error_pause_threshold,template_id,message_snapshot,scheduled_at,hourly_send_limit,daily_send_limit,warmup_stage,real_send_locked").eq("id",campaignId).maybeSingle();
  if(!campaign)return json({error:"campaign_not_found"},404);
  if(!["agendada","em_andamento"].includes(campaign.status)&&!campaign.simulation_mode)return json({error:"campaign_not_released"},409);
  const{data:integration}=await admin.from("integration_settings").select("enabled,simulation_mode,credentials_configured").eq("organization_id",campaign.organization_id).eq("provider","whatsapp_cloud_api").maybeSingle();
  const simulation=campaign.simulation_mode||integration?.simulation_mode!==false||integration?.enabled!==true||integration?.credentials_configured!==true;
+ if(!simulation&&campaign.real_send_locked!==false)return json({error:"real_send_locked"},409);
  const now=new Date().toISOString();
  if(campaign.scheduled_at&&new Date(campaign.scheduled_at).getTime()>Date.now())return json({status:"scheduled",simulation,processed:0,queued:0,blocked:0,next_batch_at:campaign.scheduled_at});
- const{data:recipients,error}=await admin.from("campaign_recipients").select("id,lead_id,customer_id,phone_e164,display_name,variables,status,attempts,scheduled_at").eq("campaign_id",campaign.id).in("status",["pendente","agendada","na_fila","falhou"]).lte("attempts",4).or(`scheduled_at.is.null,scheduled_at.lte.${now}`).order("created_at").limit(campaign.batch_size||50);
+ let batchLimit=Math.min(Number(campaign.batch_size||50),Number(campaign.hourly_send_limit||50));
+ if(!simulation){
+  const hourAgo=new Date(Date.now()-60*60*1000).toISOString(),dayAgo=new Date(Date.now()-24*60*60*1000).toISOString();
+  const[{count:sentHour},{count:sentDay}]=await Promise.all([
+   admin.from("campaign_recipients").select("id",{count:"exact",head:true}).eq("organization_id",campaign.organization_id).gte("sent_at",hourAgo),
+   admin.from("campaign_recipients").select("id",{count:"exact",head:true}).eq("organization_id",campaign.organization_id).gte("sent_at",dayAgo),
+  ]);
+  const hourlyRemaining=Math.max(0,Number(campaign.hourly_send_limit||50)-Number(sentHour||0));
+  const dailyRemaining=Math.max(0,Number(campaign.daily_send_limit||200)-Number(sentDay||0));
+  batchLimit=Math.min(batchLimit,hourlyRemaining,dailyRemaining);
+  if(batchLimit===0)return json({status:"rate_limited",simulation:false,processed:0,queued:0,blocked:0},429);
+ }
+ const{data:recipients,error}=await admin.from("campaign_recipients").select("id,lead_id,customer_id,phone_e164,display_name,variables,status,attempts,scheduled_at").eq("campaign_id",campaign.id).in("status",["pendente","agendada","na_fila","falhou"]).lte("attempts",4).or(`scheduled_at.is.null,scheduled_at.lte.${now}`).order("created_at").limit(batchLimit);
  if(error)return json({error:"queue_read_failed"},500);
  if(!recipients?.length)return json({status:"idle",simulation,processed:0,queued:0,blocked:0});
 
