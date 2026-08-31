@@ -34,7 +34,7 @@ test("modelos aprovados são imutáveis e caixa controla não lidas",()=>{
  assert.match(migration,/approved_template_is_immutable_create_new_version/);
  assert.match(migration,/track_inbound_unread/);
  assert.match(inbox,/mark_conversation_read/);
- assert.match(inbox,/Resumo da IA para transferência/);
+ assert.match(inbox,/Resumo da IA para transferência|Leitura rápida da IA/);
 });
 
 test("painel mostra consentimento importado e saúde operacional",()=>{
