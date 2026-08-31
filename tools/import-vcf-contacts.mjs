@@ -20,8 +20,10 @@ let invalidPhone = 0;
 for (const card of cards) {
   const lines = card.split(/\r?\n/).filter(Boolean);
   const fn = lines.find((line) => /^FN(?:;[^:]*)?:/i.test(line));
-  const emailLine = lines.find((line) => /^EMAIL(?:;[^:]*)?:/i.test(line));
-  const telLines = lines.filter((line) => /^TEL(?:;[^:]*)?:/i.test(line));
+  // Apple/Google exports commonly prefix properties with an item group
+  // (for example, item1955.TEL). Treat grouped and plain properties alike.
+  const emailLine = lines.find((line) => /^(?:item\d+\.)?EMAIL(?:;[^:]*)?:/i.test(line));
+  const telLines = lines.filter((line) => /^(?:item\d+\.)?TEL(?:;[^:]*)?:/i.test(line));
   if (!telLines.length) { withoutPhone++; continue; }
   let selected = null;
   for (const line of telLines) {
