@@ -15,16 +15,18 @@ const normalizePhone = (raw, waid = "") => {
 const text = unfold(await readFile(inputPath, "utf8"));
 const cards = text.split(/BEGIN:VCARD\r?\n/i).slice(1).map((card) => card.split(/END:VCARD/i)[0]);
 const contacts = [];
+const issues = [];
 let withoutPhone = 0;
 let invalidPhone = 0;
-for (const card of cards) {
+for (const [cardIndex,card] of cards.entries()) {
   const lines = card.split(/\r?\n/).filter(Boolean);
   const fn = lines.find((line) => /^FN(?:;[^:]*)?:/i.test(line));
   // Apple/Google exports commonly prefix properties with an item group
   // (for example, item1955.TEL). Treat grouped and plain properties alike.
   const emailLine = lines.find((line) => /^(?:item\d+\.)?EMAIL(?:;[^:]*)?:/i.test(line));
   const telLines = lines.filter((line) => /^(?:item\d+\.)?TEL(?:;[^:]*)?:/i.test(line));
-  if (!telLines.length) { withoutPhone++; continue; }
+  const contactName=decode(fn ? fn.slice(fn.indexOf(":") + 1) : "Contato importado") || "Contato importado";
+  if (!telLines.length) { withoutPhone++;issues.push({card_index:cardIndex+1,name:contactName,raw_phone:null,issue_type:"sem_telefone"});continue; }
   let selected = null;
   for (const line of telLines) {
     const colon = line.indexOf(":");
@@ -34,9 +36,9 @@ for (const card of cards) {
     const normalized = normalizePhone(raw, waid);
     if (normalized) { selected = { raw: decode(raw), normalized }; break; }
   }
-  if (!selected) { invalidPhone++; continue; }
+  if (!selected) { invalidPhone++;issues.push({card_index:cardIndex+1,name:contactName,raw_phone:decode(telLines[0].slice(telLines[0].indexOf(":")+1)).slice(0,80)||null,issue_type:"telefone_invalido"});continue; }
   contacts.push({
-    name: decode(fn ? fn.slice(fn.indexOf(":") + 1) : "Contato importado") || "Contato importado",
+    name: contactName,
     phone: selected.raw,
     phone_normalized: selected.normalized,
     email: emailLine ? decode(emailLine.slice(emailLine.indexOf(":") + 1)).toLowerCase() : null,
@@ -47,6 +49,7 @@ const result = {
   batch_id: `vcf-${new Date().toISOString().slice(0, 10)}-${randomUUID().slice(0, 8)}`,
   stats: { cards: cards.length, without_phone: withoutPhone, invalid_phone: invalidPhone, duplicates: contacts.length - deduped.length, valid_unique: deduped.length },
   contacts: deduped,
+  issues,
 };
 await writeFile(outputPath, JSON.stringify(result), { mode: 0o600 });
 console.log(JSON.stringify(result.stats));

@@ -6,6 +6,7 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
 });
 
 type Contact = { name?: string; phone?: string; phone_normalized?: string; email?: string | null };
+type ImportIssue = { card_index?: number; name?: string; raw_phone?: string | null; issue_type?: "sem_telefone" | "telefone_invalido" };
 
 Deno.serve(async (request) => {
   if (request.method !== "POST") return json({ error: "method_not_allowed" }, 405);
@@ -13,10 +14,20 @@ Deno.serve(async (request) => {
   const provided = request.headers.get("x-import-token") || "";
   if (!expected || provided !== expected) return json({ error: "unauthorized" }, 401);
   try {
-    const payload = await request.json() as { batch_id?: string; contacts?: Contact[] };
+    const payload = await request.json() as { batch_id?: string; contacts?: Contact[]; issues?: ImportIssue[] };
     const batchId = String(payload.batch_id || "").slice(0, 80);
     const contacts = Array.isArray(payload.contacts) ? payload.contacts.slice(0, 150) : [];
-    if (!batchId || contacts.length === 0) return json({ error: "invalid_payload" }, 400);
+    const issues = Array.isArray(payload.issues) ? payload.issues.slice(0, 150) : [];
+    if (!batchId || (contacts.length === 0 && issues.length === 0)) return json({ error: "invalid_payload" }, 400);
+    const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
+    const { data: organization, error: organizationError } = await admin.from("organizations").select("id").eq("slug", "viagem-perfeita").single();
+    if (organizationError || !organization) throw organizationError || new Error("organization_not_found");
+    if (issues.length) {
+      const rows=issues.filter(issue=>Number.isInteger(issue.card_index)&&Number(issue.card_index)>0&&["sem_telefone","telefone_invalido"].includes(String(issue.issue_type))).map(issue=>({organization_id:organization.id,batch_id:batchId,card_index:Number(issue.card_index),name:String(issue.name||"Contato importado").trim().slice(0,160)||"Contato importado",raw_phone:String(issue.raw_phone||"").trim().slice(0,80)||null,issue_type:issue.issue_type}));
+      const {error}=await admin.from("contact_import_issues").upsert(rows,{onConflict:"organization_id,batch_id,card_index,issue_type",ignoreDuplicates:true});
+      if(error)throw error;
+      return json({issues_received:issues.length,issues_recorded:rows.length,rejected:issues.length-rows.length});
+    }
     const cleaned = contacts.map((contact) => {
       const phoneNormalized = String(contact.phone_normalized || "").replace(/\D/g, "");
       return {
@@ -29,9 +40,6 @@ Deno.serve(async (request) => {
     const unique = [...new Map(cleaned.map((contact) => [contact.phone_normalized, contact])).values()];
     if (unique.length === 0) return json({ inserted: 0, existing: 0, rejected: contacts.length });
 
-    const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
-    const { data: organization, error: organizationError } = await admin.from("organizations").select("id").eq("slug", "viagem-perfeita").single();
-    if (organizationError || !organization) throw organizationError || new Error("organization_not_found");
     const { data: pipeline } = await admin.from("pipelines").select("id,pipeline_stages!inner(id,code)")
       .eq("organization_id", organization.id).eq("entity_type", "lead").eq("is_default", true).maybeSingle();
     const stages = (pipeline?.pipeline_stages || []) as Array<{ id: string; code: string }>;

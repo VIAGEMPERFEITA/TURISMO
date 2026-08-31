@@ -23,5 +23,6 @@ test("VCF parser imports plain and Apple grouped telephone fields",async()=>{
   assert.equal(result.stats.valid_unique,2);
   assert.equal(result.stats.without_phone,0);
   assert.equal(result.contacts[0].email,"test@example.com");
+  assert.deepEqual(result.issues,[]);
  }finally{await rm(dir,{recursive:true,force:true})}
 });
