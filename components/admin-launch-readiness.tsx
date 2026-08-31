@@ -26,6 +26,7 @@ type Preflight = {
   recovery_snapshot_at?: string | null;
   simulation_only?: boolean;
 };
+type LearningCycle = { cycle_date: string; status: string; passed: number; scenarios_total: number; critical_failures: number };
 
 export function AdminLaunchReadiness() {
   const [readiness, setReadiness] = useState<Readiness | null>(null);
@@ -37,18 +38,20 @@ export function AdminLaunchReadiness() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [lastOperation, setLastOperation] = useState<Record<string, unknown> | null>(null);
+  const [lastLearning, setLastLearning] = useState<LearningCycle | null>(null);
 
   const load = useCallback(async () => {
     const client = getSupabaseBrowserClient();
     if (!client) return;
     setLoading(true);
-    const [center, gate, preflightResult, wa, templates, channels] = await Promise.all([
+    const [center, gate, preflightResult, wa, templates, channels, learning] = await Promise.all([
       client.rpc("operational_readiness_center"),
       client.rpc("ai_release_gate"),
       client.rpc("meta_prelaunch_preflight"),
       client.from("whatsapp_accounts").select("status,coexistence_enabled,display_phone,metadata").eq("phone_e164", "5531995285665").maybeSingle(),
       client.from("message_templates").select("id", { count: "exact", head: true }).eq("status", "aprovado"),
       client.from("channel_accounts").select("id", { count: "exact", head: true }).eq("status", "connected"),
+      client.from("ai_learning_cycles").select("cycle_date,status,passed,scenarios_total,critical_failures").order("cycle_date", { ascending: false }).limit(1).maybeSingle(),
     ]);
     setReadiness((center.data ?? null) as Readiness | null);
     setAiGate((gate.data ?? null) as AiGate | null);
@@ -56,6 +59,7 @@ export function AdminLaunchReadiness() {
     setWhatsapp((wa.data ?? null) as WhatsAppAccount | null);
     setApprovedTemplates(templates.count ?? 0);
     setConnectedChannels(channels.count ?? 0);
+    setLastLearning((learning.data ?? null) as LearningCycle | null);
     setMessage(center.error || gate.error || preflightResult.error || wa.error ? "Parte dos indicadores não pôde ser consultada. Verifique as migrations e a sessão do administrador." : "");
     setLoading(false);
   }, []);
@@ -92,13 +96,14 @@ export function AdminLaunchReadiness() {
     { label: "Canais sociais conectados", ready: connectedChannels >= 2, detail: `${connectedChannels} conta(s) conectada(s)` },
     { label: "Alertas operacionais", ready: (readiness?.open_health_alerts ?? 0) === 0, detail: `${readiness?.open_health_alerts ?? 0} alerta(s) aberto(s)` },
     { label: "SLA da caixa de atendimento", ready: (readiness?.over_sla ?? 0) === 0, detail: `${readiness?.over_sla ?? 0} conversa(s) fora do SLA` },
-    { label: "Contatos importados governados", ready: (imported.total ?? 0) === 0 || (imported.consented ?? 0) + (imported.suppressed ?? 0) <= (imported.total ?? 0), detail: `${imported.consented ?? 0} consentido(s), ${imported.suppressed ?? 0} suprimido(s), ${imported.total ?? 0} total` },
-    { label: "WhatsApp oficial em coexistência", ready: whatsappReady, detail: whatsappReady ? `${whatsapp?.display_phone} conectado e com webhook` : "Bloqueado até a aprovação das permissões da Meta" },
+    { label: "Contatos importados protegidos", ready: (imported.consented ?? 0) + (imported.suppressed ?? 0) <= (imported.total ?? 0), detail: `${imported.total ?? 0} no CRM; ${imported.consented ?? 0} apto(s) para marketing; demais bloqueados sem consentimento` },
+    { label: "WhatsApp oficial +55 31 99528-5665", ready: whatsappReady, detail: whatsappReady ? `${whatsapp?.display_phone} conectado e com webhook` : "Número reservado; coexistência aguardando a Meta" },
     { label: "Modelos oficiais do WhatsApp", ready: approvedTemplates > 0, detail: `${approvedTemplates} modelo(s) aprovado(s)` },
     { label: "Validade das credenciais", ready: (preflight?.expired_tokens ?? 0) === 0 && (preflight?.tokens_expiring_14d ?? 0) === 0, detail: `${preflight?.expired_tokens ?? 0} vencido(s), ${preflight?.tokens_expiring_14d ?? 0} vencendo em 14 dias` },
     { label: "Retentativas e fila de falhas", ready: (preflight?.webhook_dead_letter ?? 0) === 0 && (preflight?.queue_stuck ?? 0) === 0, detail: `${preflight?.webhook_retrying ?? 0} retentativa(s), ${preflight?.webhook_dead_letter ?? 0} dead-letter, ${preflight?.queue_stuck ?? 0} travado(s)` },
     { label: "Envios reais bloqueados", ready: preflight?.simulation_only === true && (preflight?.campaigns_unlocked ?? 0) === 0, detail: preflight?.simulation_only ? "Somente simulação até a liberação" : "Há operação real liberada antes da Meta" },
     { label: "Recuperação operacional", ready: Boolean(preflight?.recovery_snapshot_at), detail: preflight?.recovery_snapshot_at ? `Snapshot ${new Date(preflight.recovery_snapshot_at).toLocaleString("pt-BR")}` : "Snapshot ainda não registrado" },
+    { label: "Evolução diária da IA", ready: lastLearning?.status === "completed" && (lastLearning?.critical_failures ?? 1) === 0, detail: lastLearning ? `${lastLearning.cycle_date}: ${lastLearning.passed}/${lastLearning.scenarios_total} aprovados` : "Aguardando o primeiro ciclo registrado" },
   ];
   const readyCount = checks.filter(item => item.ready).length;
 
