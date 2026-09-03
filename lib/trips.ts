@@ -61,6 +61,15 @@ const recurring2028Trips=trips.filter((trip)=>recurring2027Slugs.includes(trip.s
   return{...trip,id:trip.id.replace("2027","2028"),name,slug:trip.slug.replace("2027","2028"),year:2028,featured:false,priority:trip.priority+100,itinerary:trip.itinerary.map(item=>({...item,activities:item.activities?[...item.activities]:undefined})),seo:{title:`${name} | Viagem Perfeita Turismo`,description:trip.shortDescription}};
 });
 trips.push(...recurring2028Trips);
+const egyptJordanIsrael2026=trips.find((trip)=>trip.slug==="egito-jordania-israel-novembro-2026");
+if(egyptJordanIsrael2026){
+  const name=egyptJordanIsrael2026.name.replace("2026","2028");
+  trips.push({...egyptJordanIsrael2026,id:"trip_egito_jordania_israel_2028",name,
+    slug:"egito-jordania-israel-novembro-2028",year:2028,departureDate:undefined,returnDate:undefined,
+    featured:false,priority:egyptJordanIsrael2026.priority+100,
+    itinerary:egyptJordanIsrael2026.itinerary.map(item=>({...item,activities:item.activities?[...item.activities]:undefined})),
+    seo:{title:`${name} | Viagem Perfeita Turismo`,description:egyptJordanIsrael2026.shortDescription}});
+}
 
 const officialPriorityCovers:Record<string,{coverImage:string;gallery:string[]}>= {
   "egito-jordania-israel-novembro-2026":{coverImage:"/media/israel/jerusalem-experiencia.jpg",gallery:["/media/israel/jerusalem-experiencia.jpg","/media/official-instagram/israel-caravana-eliana.jpg"]},
