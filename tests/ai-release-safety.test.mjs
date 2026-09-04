@@ -30,6 +30,15 @@ test("IA registra qualificação, fontes e preserva handoff humano", () => {
   assert.match(edge, /Nunca invente preço, vaga, data/);
 });
 
+test("IA transfere dúvidas operacionais sem fonte oficial", () => {
+  for (const guardedIntent of [
+    "boleto", "pix", "bagagem", "voo", "documenta", "hospedagem",
+    "hotel", "inclus", "grupo", "guia", "experi",
+  ]) assert.match(edge, new RegExp(guardedIntent));
+  assert.match(edge, /requiresApprovedSource && usedSources\.length === 0/);
+  assert.match(edge, /Não encontrei uma fonte oficial suficiente/);
+});
+
 test("número oficial está centralizado", () => {
   assert.match(contact, /siteConfig\.contact\.phoneInternational/);
   assert.match(siteConfig, /5531995285665/);
