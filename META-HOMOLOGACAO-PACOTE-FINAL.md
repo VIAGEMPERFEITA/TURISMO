@@ -14,12 +14,18 @@
 ## Demonstração obrigatória
 
 1. Entrar no CRM como administrador.
-2. Abrir **Caixa de entrada** e mostrar Instagram, Messenger e WhatsApp separados.
-3. Enviar uma mensagem de conta de teste autorizada.
-4. Mostrar persistência, resposta supervisionada e histórico.
-5. Solicitar atendimento humano e demonstrar a pausa da IA.
-6. Mostrar consentimento, descadastro e ausência de disparos sem autorização.
-7. Mostrar Política de Privacidade e processo de exclusão de dados.
+2. Mostrar o fluxo completo de Login da Meta e a conta comercial selecionada.
+3. Mostrar o usuário concedendo as permissões solicitadas ao app.
+4. Abrir **Caixa de entrada** e mostrar Instagram, Messenger e WhatsApp separados.
+5. Exibir o ativo selecionado (Página, conta do Instagram ou número) dentro do CRM.
+6. Enviar uma mensagem ao vivo pela interface do CRM.
+7. Mostrar exatamente a mesma mensagem entregue no cliente nativo do canal.
+8. Mostrar persistência, resposta supervisionada e histórico.
+9. Solicitar atendimento humano e demonstrar a pausa da IA.
+10. Mostrar consentimento, descadastro e ausência de disparos sem autorização.
+11. Mostrar Política de Privacidade e processo de exclusão de dados.
+
+O vídeo deve usar a interface do app em inglês, conter legendas ou dicas visuais e explicar os controles exibidos. Capturas estáticas, apresentação de telas ou envio feito somente pelo console da Meta não substituem a ação ao vivo pela interface do CRM.
 
 ## Controles que devem aparecer no vídeo
 

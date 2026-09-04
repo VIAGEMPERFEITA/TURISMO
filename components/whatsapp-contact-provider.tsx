@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { Check, ChevronLeft, MessageCircle, X } from "lucide-react";
 import { createContext, type ReactNode, useContext, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { createLeadWhatsAppMessage, createWhatsAppLink, type TripContactContext, type WhatsAppLead } from "../lib/company-contact";
 import { formatBrazilianPhone, type LeadFormData, leadFormSchema } from "../lib/lead-schema";
 import { recordWhatsAppStarted, savePublicLead } from "../lib/lead-service";
@@ -26,7 +26,7 @@ export function WhatsAppContactProvider({children}:{children:ReactNode}){
   function close(){setRequest(null)}
   async function confirm(values:LeadFormData){if(!request)return;setSaving(true);setSaveMessage("");const result=await savePublicLead(values,request,request.buttonText);setSaving(false);setSaveMessage(result.message);if(!result.saved){setAllowFallback(true);return}if(result.leadId)await recordWhatsAppStarted(result.leadId,request.buttonText);openWhatsApp(values)}
   function openWhatsApp(values:LeadFormData){if(!request)return;const message=createLeadWhatsAppMessage(values,request);trackWhatsAppClick({buttonText:request.buttonText,tripName:request.tripName,lead:values});window.open(createWhatsAppLink(message),"_blank","noopener,noreferrer");close()}
-  const values=form.watch();
+  const values=useWatch({control:form.control,defaultValue:defaults}) as LeadFormData;
   async function advanceEssential(){if(await form.trigger(["name","phone","interest"]))setStep("details")}
   return <ContactContext.Provider value={{openContact}}>{children}{request?<div className="contact-modal" role="dialog" aria-modal="true" aria-labelledby="contact-title" onMouseDown={e=>e.target===e.currentTarget&&close()}><form className="contact-form expanded" onSubmit={step==="review"?form.handleSubmit(confirm):(event)=>event.preventDefault()}><button type="button" className="contact-close" onClick={close} aria-label="Fechar formulário"><X/></button><p className="eyebrow">Atendimento personalizado · Etapa {step==="essential"?"1":step==="details"?"2":"3"} de 3</p><h2 id="contact-title">{step==="essential"?"Vamos começar pelo essencial.":step==="details"?"Personalize sua solicitação.":"Confira sua solicitação"}</h2><p>{request.tripName?`Interesse em ${request.tripName}`:"Sua solicitação será revisada antes de abrir o WhatsApp."}</p>{step==="essential"?<div className="contact-fields essential-fields">
     <label>Nome completo *<input autoFocus autoComplete="name" {...form.register("name")}/><small>{form.formState.errors.name?.message}</small></label><label>WhatsApp *<input inputMode="tel" autoComplete="tel" placeholder="(31) 99999-9999" {...form.register("phone",{onChange:event=>form.setValue("phone",formatBrazilianPhone(event.target.value),{shouldValidate:false})})}/><small>{form.formState.errors.phone?.message}</small></label>

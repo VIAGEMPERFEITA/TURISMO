@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import test from "node:test";
 
-const root=new URL("../",import.meta.url);
 const migration=readFileSync(new URL("../supabase/migrations/202608100009_travel_growth_engine.sql",import.meta.url),"utf8");
 const acquisition=readFileSync(new URL("../components/admin-acquisition.tsx",import.meta.url),"utf8");
 const shell=readFileSync(new URL("../components/admin-shell.tsx",import.meta.url),"utf8");

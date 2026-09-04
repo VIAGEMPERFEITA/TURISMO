@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Bot, Check, FileText, LoaderCircle, Plus, RefreshCw, Save, ShieldCheck, X } from "lucide-react";
+import { Bot, Check, LoaderCircle, Plus, RefreshCw, Save, ShieldCheck, X } from "lucide-react";
 import { getAuthenticatedCrmUser, type CrmProfile } from "../lib/crm-auth";
 import { getSupabaseBrowserClient } from "../lib/supabase-client";
 
