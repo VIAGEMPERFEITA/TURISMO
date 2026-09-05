@@ -33,6 +33,7 @@ test("IA registra qualificação, fontes e preserva handoff humano", () => {
 test("IA transfere dúvidas operacionais sem fonte oficial", () => {
   for (const guardedIntent of [
     "boleto", "pix", "bagagem", "voo", "documenta", "hospedagem",
+    "primeira", "quarto", "roteiro", "seguran", "personalizada",
     "hotel", "inclus", "grupo", "guia", "experi",
   ]) assert.match(edge, new RegExp(guardedIntent));
   assert.match(edge, /requiresApprovedSource && usedSources\.length === 0/);

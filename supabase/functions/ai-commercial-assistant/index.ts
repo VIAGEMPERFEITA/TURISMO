@@ -328,7 +328,7 @@ Deno.serve(async request => {
     }
 
     let answer = responseText(response) || "Não encontrei informação aprovada suficiente. Posso encaminhar você para um consultor.";
-    const requiresApprovedSource = /\b(pre[cç]o|pre[cç]os|valor|valores|quanto custa|or[cç]amento|parcelamento|condi[cç][aã]o de pagamento|boleto|pix|vaga|vagas|disponibilidade|dispon[ií]vel|data|datas|sa[ií]da|retorno|bagagem|mala|voo|voos|companhia\s+a[eé]rea|documenta[cç][aã]o|documentos?|passaporte|hospedagem|hotel|hot[eé]is|inclus[aã]o|inclus[oõ]es|inclu[ií]do|inclu[ií]da|l[ií]der(?:\s+do)?\s+grupo|guia|experi[eê]ncia\s+espiritual)\b|roteiro\s+completo/i.test(message);
+    const requiresApprovedSource = /\b(pre[cç]o|pre[cç]os|valor|valores|quanto custa|or[cç]amento|parcelamento|condi[cç][aã]o de pagamento|boleto|pix|vaga|vagas|disponibilidade|dispon[ií]vel|data|datas|sa[ií]da|retorno|bagagem|mala|voo|voos|companhia\s+a[eé]rea|documenta[cç][aã]o|documentos?|passaporte|hospedagem|hotel|hot[eé]is|quarto\s+individual|inclus[aã]o|inclus[oõ]es|inclu[ií]do|inclu[ií]da|l[ií]der(?:\s+do)?\s+grupo|guia|experi[eê]ncia\s+espiritual|primeira\s+viagem|roteiro|seguran[cç]a|seguro\s+viagem|viagem\s+personalizada)\b/i.test(message);
     if (requiresApprovedSource && usedSources.length === 0) {
       handoff = true;
       answer = "Não encontrei uma fonte oficial suficiente para confirmar essa informação. Vou encaminhar seu atendimento a um consultor, que continuará somente com os dados oficiais vigentes.";
