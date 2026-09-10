@@ -15,13 +15,15 @@ import { getSupabaseBrowserClient } from "../lib/supabase-client";
 const META_APP_ID = "1295731149305805";
 const META_CONFIGURATION_ID = "4336542926489080";
 const OFFICIAL_PHONE_E164 = "5531995285665";
+const OFFICIAL_WABA_ID = "26064285569926082";
+const OFFICIAL_PHONE_NUMBER_ID = "940728502466959";
 const META_SDK_ID = "facebook-jssdk";
 const META_SDK_URLS = [
   "https://connect.facebook.net/pt_BR/sdk.js",
   "https://connect.facebook.net/en_US/sdk.js",
 ] as const;
 const SDK_TIMEOUT_MS = 12_000;
-const LOGIN_TIMEOUT_MS = 20_000;
+const LOGIN_TIMEOUT_MS = 180_000;
 
 type SignupSession = { waba_id?: string; phone_number_id?: string };
 type FacebookResponse = {
@@ -54,6 +56,8 @@ export function AdminWhatsAppConnection() {
   const [sdkError, setSdkError] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [testing, setTesting] = useState(false);
+  const [manualConnecting, setManualConnecting] = useState(false);
+  const [systemToken, setSystemToken] = useState("");
   const [message, setMessage] = useState("");
   const [connected, setConnected] = useState(false);
   const [displayPhone, setDisplayPhone] = useState("+55 31 99528-5665");
@@ -319,6 +323,38 @@ export function AdminWhatsAppConnection() {
     );
   }
 
+  async function completeWithSystemToken() {
+    if (manualConnecting || !systemToken.trim()) return;
+    const client = getSupabaseBrowserClient();
+    if (!client) {
+      setMessage("Supabase não configurado.");
+      return;
+    }
+    setManualConnecting(true);
+    setMessage("");
+    const { data, error } = await client.functions.invoke("whatsapp-manual-connect", {
+      body: {
+        access_token: systemToken.trim(),
+        waba_id: OFFICIAL_WABA_ID,
+        phone_number_id: OFFICIAL_PHONE_NUMBER_ID,
+      },
+    });
+    setSystemToken("");
+    setManualConnecting(false);
+    if (error || !data?.connected) {
+      setMessage(
+        data?.error
+          ? `Conexão não concluída: ${data.error}`
+          : "A Meta não validou o token para esta conta do WhatsApp.",
+      );
+      return;
+    }
+    setConnected(true);
+    setReadiness((current) => ({ ...current, webhook: true }));
+    if (data.displayPhone) setDisplayPhone(data.displayPhone);
+    setMessage("WhatsApp oficial conectado, validado e com webhook assinado.");
+  }
+
   return (
     <div className="crm-report-grid whatsapp-connection-grid">
       <section className="crm-panel">
@@ -357,6 +393,29 @@ export function AdminWhatsAppConnection() {
                   ? "Conectar WhatsApp Business"
                   : "Carregando Meta…"}
         </button>
+        {!connected ? (
+          <div className="crm-form-group">
+            <label htmlFor="whatsapp-system-token">Token permanente do usuário do sistema</label>
+            <input
+              id="whatsapp-system-token"
+              type="password"
+              autoComplete="off"
+              spellCheck={false}
+              value={systemToken}
+              onChange={(event) => setSystemToken(event.target.value)}
+              placeholder="Cole o token gerado na Meta"
+            />
+            <small>O token é enviado diretamente ao servidor, validado na Meta e armazenado no Vault.</small>
+            <button
+              className="crm-secondary whatsapp-connect-button"
+              onClick={completeWithSystemToken}
+              disabled={manualConnecting || !systemToken.trim()}
+            >
+              {manualConnecting ? <LoaderCircle className="spin" /> : <ShieldCheck />}
+              {manualConnecting ? "Validando e protegendo…" : "Concluir com token permanente"}
+            </button>
+          </div>
+        ) : null}
         <button
           className="crm-secondary whatsapp-connect-button"
           onClick={testMetaConnection}
