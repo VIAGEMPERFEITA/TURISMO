@@ -11,6 +11,12 @@ const json = (body: unknown, status = 200) =>
 const officialPhone = "5531995285665";
 const metaAppId = "1295731149305805";
 const digitsOnly = (value: unknown) => String(value || "").replace(/\D/g, "");
+const normalizedPhone = (value: unknown) => {
+  const digits = digitsOnly(value);
+  return digits.startsWith("55") && digits.length === 12
+    ? `${digits.slice(0, 4)}9${digits.slice(4)}`
+    : digits;
+};
 
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers });
@@ -19,8 +25,7 @@ Deno.serve(async (request) => {
   const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-  const metaAccessToken = Deno.env.get("META_WHATSAPP_ACCESS_TOKEN") || "";
-  if (!supabaseUrl || !anonKey || !serviceKey || !metaAccessToken) {
+  if (!supabaseUrl || !anonKey || !serviceKey) {
     return json({ error: "service_not_configured" }, 503);
   }
 
@@ -44,16 +49,25 @@ Deno.serve(async (request) => {
 
   const { data: account } = await admin
     .from("whatsapp_accounts")
-    .select("waba_id")
+    .select("waba_id,token_secret_name")
     .eq("organization_id", profile.organization_id)
+    .eq("status", "ativo")
+    .not("phone_number_id", "is", null)
     .not("waba_id", "is", null)
     .order("updated_at", { ascending: false })
     .limit(1)
     .maybeSingle();
 
-  // The test WABA remains an authorized fallback until Embedded Signup returns
-  // the definitive account. Trying both avoids a stale CRM record blocking the
-  // permission validation required by Meta App Review.
+  const { data: vaultToken } = account?.token_secret_name
+    ? await admin.rpc("get_whatsapp_access_token", {
+        target_secret_name: account.token_secret_name,
+      })
+    : { data: null };
+  const metaAccessToken = String(vaultToken || Deno.env.get("META_WHATSAPP_ACCESS_TOKEN") || "");
+  if (!metaAccessToken) return json({ error: "meta_token_not_configured" }, 503);
+
+  // The test WABA remains an authorized fallback until the definitive account
+  // is available. The connected production account is always attempted first.
   const candidates = [...new Set([account?.waba_id, "1077957561405552"].filter(Boolean))];
   const attempts: Array<{ status: number; metaCode?: number; metaType?: string }> = [];
 
@@ -67,7 +81,7 @@ Deno.serve(async (request) => {
       const phones = Array.isArray(result.data) ? result.data : [];
       const official = phones.find(
         (phone: { display_phone_number?: string }) =>
-          digitsOnly(phone.display_phone_number) === officialPhone,
+          normalizedPhone(phone.display_phone_number) === officialPhone,
       );
       if (!official) {
         attempts.push({ status: 409, metaType: "official_phone_not_found" });
