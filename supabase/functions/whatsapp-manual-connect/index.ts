@@ -9,6 +9,12 @@ const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers });
 const clean = (value: unknown, max = 256) =>
   typeof value === "string" ? value.trim().slice(0, max) : "";
+const normalizeBrazilianE164 = (value: string) => {
+  const digits = value.replace(/\D/g, "");
+  return digits.startsWith("55") && digits.length === 12
+    ? `${digits.slice(0, 4)}9${digits.slice(4)}`
+    : digits;
+};
 
 Deno.serve(async (request) => {
   if (request.method === "OPTIONS") return new Response("ok", { headers });
@@ -77,7 +83,7 @@ Deno.serve(async (request) => {
     return json({ error: "meta_waba_subscription_failed" }, 502);
   }
 
-  const digits = clean(phone.display_phone_number).replace(/\D/g, "");
+  const digits = normalizeBrazilianE164(clean(phone.display_phone_number));
   if (!/^[1-9][0-9]{9,14}$/.test(digits)) {
     return json({ error: "invalid_phone_number" }, 409);
   }
