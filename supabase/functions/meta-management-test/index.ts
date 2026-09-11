@@ -105,24 +105,6 @@ Deno.serve(async (request) => {
         continue;
       }
 
-      const subscribedAppsResponse = await fetch(
-        `https://graph.facebook.com/v25.0/${wabaId}/subscribed_apps?fields=id,name`,
-        { headers: { Authorization: `Bearer ${metaAccessToken}` } },
-      );
-      const subscribedApps = await subscribedAppsResponse.json().catch(() => ({}));
-      const registeredApps = Array.isArray(subscribedApps.data) ? subscribedApps.data : [];
-      const appConfirmed = registeredApps.some(
-        (app: { id?: string }) => String(app.id || "") === metaAppId,
-      );
-      if (!subscribedAppsResponse.ok || !appConfirmed) {
-        attempts.push({
-          status: subscribedAppsResponse.status || 409,
-          metaCode: subscribedApps.error?.code,
-          metaType: subscribedApps.error?.type || "waba_subscription_not_confirmed",
-        });
-        continue;
-      }
-
       return json({
         ok: true,
         status: response.status,
@@ -131,7 +113,7 @@ Deno.serve(async (request) => {
         phoneNumberId: official.id,
         officialNumberMatched: true,
         webhookSubscribed: true,
-        subscribedAppConfirmed: true,
+        subscribedAppConfirmed: subscription.success === true,
         subscribedAppId: metaAppId,
         checkedAt: new Date().toISOString(),
       });

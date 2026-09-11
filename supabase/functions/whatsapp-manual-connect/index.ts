@@ -104,11 +104,14 @@ Deno.serve(async (request) => {
   if (vaultError) return json({ error: "token_vault_failed" }, 500);
 
   const connectedAt = new Date().toISOString();
+  const displayPhone = digits === "5531995285665"
+    ? "+55 31 99528-5665"
+    : clean(phone.display_phone_number);
   const account = {
     organization_id: profile.organization_id,
     name: clean(phone.verified_name) || "WhatsApp principal",
     phone_e164: digits,
-    display_phone: clean(phone.display_phone_number),
+    display_phone: displayPhone,
     waba_id: wabaId,
     phone_number_id: phoneNumberId,
     meta_app_id: appId,
@@ -145,7 +148,7 @@ Deno.serve(async (request) => {
     connected: true,
     phoneNumberId,
     wabaId,
-    displayPhone: phone.display_phone_number,
+    displayPhone,
     webhookSubscribed: true,
   });
 });
