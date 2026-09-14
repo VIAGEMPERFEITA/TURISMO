@@ -332,7 +332,9 @@ export function WhatsAppInbox() {
       setNotice(
         data?.error
           ? `Envio não concluído: ${data.error}`
-          : "Não foi possível enviar a mensagem.",
+          : error?.message
+            ? `Envio não concluído: ${error.message}`
+            : "Não foi possível enviar a mensagem.",
       );
       return;
     }

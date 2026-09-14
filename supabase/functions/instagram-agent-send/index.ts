@@ -1,9 +1,11 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{"Content-Type":"application/json"}});
+const cors={"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type","Access-Control-Allow-Methods":"POST, OPTIONS"};
+const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors,"Content-Type":"application/json"}});
 const clean=(value:unknown,max=4096)=>typeof value==="string"?value.trim().slice(0,max):"";
 
 Deno.serve(async request=>{
+  if(request.method==="OPTIONS")return new Response("ok",{headers:cors});
   if(request.method!=="POST")return json({error:"method_not_allowed"},405);
   const authorization=request.headers.get("authorization")||"";
   const supabaseUrl=Deno.env.get("SUPABASE_URL"),anonKey=Deno.env.get("SUPABASE_ANON_KEY");
