@@ -29,7 +29,7 @@ export function AdminYoavFoundation({ module }: { module: Module }) {
     const [{ data, error }, accountResult] = await Promise.all([
       client.from(config.table).select("*").order("created_at", { ascending: false }).limit(100),
       module === "conteudo-social"
-        ? client.from("channel_accounts").select("name,provider,external_account_id,status,last_sync_at").eq("channel", "instagram").limit(1).maybeSingle()
+        ? client.from("channel_accounts").select("name,provider,external_account_id,status,last_sync_at").eq("channel", "instagram").eq("status", "connected").order("updated_at", { ascending: false }).limit(1).maybeSingle()
         : Promise.resolve({ data: null }),
     ]);
     if (error) { setNotice("Este módulo estará disponível após a migration CRM YOAV ser publicada."); return; }
