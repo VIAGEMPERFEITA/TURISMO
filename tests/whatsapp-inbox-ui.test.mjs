@@ -14,14 +14,14 @@ test("caixa compartilhada integra assumir, transferir, devolver e enviar",()=>{
   assert.doesNotMatch(inbox,/META_WHATSAPP_ACCESS_TOKEN|WHATSAPP_WORKER_SECRET/);
 });
 
-test("caixa compartilhada reúne os três canais oficiais sem liberar envios sociais antes do teste controlado",()=>{
+test("caixa compartilhada reúne os três canais oficiais e limita envio aos canais homologados",()=>{
   assert.match(inbox,/Caixa de entrada omnichannel/);
-  assert.match(inbox,/\.in\("channel",\["whatsapp","instagram","facebook"\]\)/);
+  assert.match(inbox,/\.in\("channel",\s*\["whatsapp",\s*"instagram",\s*"facebook"\]\)/);
   for(const channel of ["WhatsApp","Instagram","Messenger"]){
     assert.match(inbox,new RegExp(channel));
   }
-  assert.match(inbox,/selected\.channel!=="whatsapp"/);
-  assert.match(inbox,/teste externo controlado/);
+  assert.match(inbox,/\["whatsapp",\s*"instagram"\]\.includes\(selected\.channel\)/);
+  assert.match(inbox,/O envio humano deste canal ainda não está disponível/);
   assert.match(inbox,/Falha de entrega:/);
   assert.match(inbox,/error_message/);
 });

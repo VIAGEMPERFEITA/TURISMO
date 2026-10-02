@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Bot,
   CheckCheck,
@@ -91,6 +91,7 @@ const slaMinutes = (value: string | null) =>
     ? Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 60000))
     : 0;
 export function WhatsAppInbox() {
+  const activeMessagesRequest = useRef<string | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]),
     [messages, setMessages] = useState<Message[]>([]),
     [profiles, setProfiles] = useState<Profile[]>([]),
@@ -139,6 +140,7 @@ export function WhatsAppInbox() {
   const loadMessages = useCallback(async (id: string) => {
     const client = getSupabaseBrowserClient();
     if (!client) return;
+    activeMessagesRequest.current = id;
     const { data, error } = await client
       .from("messages")
       .select(
@@ -147,6 +149,9 @@ export function WhatsAppInbox() {
       .eq("conversation_id", id)
       .order("sent_at", { ascending: true })
       .limit(500);
+    // A troca rápida de conversa pode fazer uma consulta anterior terminar por
+    // último. Nunca deixe essa resposta atrasada substituir o canal selecionado.
+    if (activeMessagesRequest.current !== id) return;
     if (error)
       setNotice("Não foi possível carregar o histórico desta conversa.");
     else setMessages((data || []) as Message[]);
@@ -190,6 +195,7 @@ export function WhatsAppInbox() {
   }, [loadConversations]);
   useEffect(() => {
     if (selectedId) {
+      setMessages([]);
       loadMessages(selectedId);
       const client = getSupabaseBrowserClient();
       client
@@ -201,7 +207,10 @@ export function WhatsAppInbox() {
             ),
           ),
         );
-    } else setMessages([]);
+    } else {
+      activeMessagesRequest.current = null;
+      setMessages([]);
+    }
   }, [selectedId, loadMessages]);
   useEffect(() => {
     if (selected?.lead?.id) loadNotes(selected.lead.id);
