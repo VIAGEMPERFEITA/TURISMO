@@ -21,7 +21,10 @@ export async function resolveMetaChannelAccount(admin: any, channel: MetaChannel
   const candidates = await admin.from("channel_accounts").select("id,organization_id,external_account_id,credential_secret_name,settings")
     .eq("channel", channel).eq("status", "connected");
   const matching = (candidates.data || []).filter((account: any) => settingsIds(account.settings).includes(externalId));
-  const account = matching.length === 1 ? matching[0] : (candidates.data?.length === 1 ? candidates.data[0] : null);
+  // Nunca atribua um webhook desconhecido apenas porque existe uma única conta
+  // conectada. IDs do Instagram são vinculados ao aplicativo/conta e esse
+  // fallback pode fazer uma resposta sair pela identidade errada.
+  const account = matching.length === 1 ? matching[0] : null;
   if (!account) return null;
   await admin.from("channel_account_external_ids").upsert({
     organization_id: account.organization_id,

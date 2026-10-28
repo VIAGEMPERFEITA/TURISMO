@@ -11,6 +11,7 @@ const ui=fs.readFileSync("components/admin-instagram-automation.tsx","utf8");
 const route=fs.readFileSync("app/admin/[module]/page.tsx","utf8");
 const oauth=fs.readFileSync("supabase/functions/instagram-oauth-connect/index.ts","utf8");
 const activation=fs.readFileSync("supabase/migrations/202608230003_activate_validated_instagram_flows.sql","utf8");
+const accountResolver=fs.readFileSync("supabase/functions/_shared/meta-account.ts","utf8");
 
 test("Instagram automation is tenant-safe, auditable and blocked before connection",()=>{
  assert.match(migration,/social_automation_executions/);
@@ -77,6 +78,20 @@ test("Instagram OAuth callback resolves stale credential alerts after reconnecti
  assert.match(oauth,/integration_health_events/);
  assert.match(oauth,/status:"resolved",resolved_at:connectedAt/);
  assert.match(oauth,/\.eq\("provider","instagram"\)\.eq\("status","open"\)/);
+});
+
+test("Instagram binds webhooks only to verified account identifiers",()=>{
+ assert.match(oauth,/graph_account_id:graphAccountId/);
+ assert.match(oauth,/channel_account_external_ids/);
+ assert.match(accountResolver,/matching\.length === 1 \? matching\[0\] : null/);
+ assert.doesNotMatch(accountResolver,/candidates\.data\?\.length === 1/);
+});
+
+test("recipient-specific delivery failure pauses only that conversation",()=>{
+ assert.match(dispatch,/requested user cannot be found/);
+ assert.match(dispatch,/requires_human:true/);
+ assert.match(dispatch,/event_type:"recipient_unavailable"/);
+ assert.match(dispatch,/next_attempt_at:recipientUnavailable\?null:nextAttempt/);
 });
 
 test("ativação aprovada libera somente os quatro fluxos validados e exige canal e IA prontos",()=>{
