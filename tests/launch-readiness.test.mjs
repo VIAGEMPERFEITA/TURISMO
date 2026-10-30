@@ -12,6 +12,14 @@ test("central de prontidão consolida segurança sem ativar envios externos", ()
   assert.match(route, /AdminLaunchReadiness/);
 });
 
+test("painel encerra carregamento e não aprova indicador sem resposta", () => {
+  assert.match(component, /withQueryTimeout/);
+  assert.match(component, /setLoading\(false\)/);
+  assert.match(component, /Indicador não consultado/);
+  assert.match(component, /readiness !== null/);
+  assert.match(component, /preflight !== null/);
+});
+
 test("runbook cobre as sete etapas e preserva coexistência e idempotência", () => {
   for (const heading of ["## 1.", "## 2.", "## 3.", "## 4.", "## 5.", "## 6.", "## 7.", "## Reversão"]) assert.match(runbook, new RegExp(heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   assert.match(runbook, /coexistência/);
