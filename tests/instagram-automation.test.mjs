@@ -87,6 +87,14 @@ test("Instagram binds webhooks only to verified account identifiers",()=>{
  assert.doesNotMatch(accountResolver,/candidates\.data\?\.length === 1/);
 });
 
+test("Instagram accepts and processes only the official viagemperfeitatrip identity",()=>{
+ assert.match(oauth,/wrong_instagram_account/);
+ assert.match(oauth,/expected_username:"viagemperfeitatrip"/);
+ assert.doesNotMatch(oauth,/accountData\.username,160\)\|\|"viagemperfeitatrip"/);
+ assert.match(webhook,/account\.settings\?\.username/);
+ assert.match(webhook,/!=="viagemperfeitatrip"\)continue/);
+});
+
 test("recipient-specific delivery failure pauses only that conversation",()=>{
  assert.match(dispatch,/requested user cannot be found/);
  assert.match(dispatch,/requires_human:true/);

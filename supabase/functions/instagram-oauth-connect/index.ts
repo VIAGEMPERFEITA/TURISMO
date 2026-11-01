@@ -38,7 +38,12 @@ Deno.serve(async request=>{
   const accountResponse=await fetch(profileUrl);const accountData=await accountResponse.json().catch(()=>({}));
   if(!accountResponse.ok)return json({connected:false,error:"instagram_account_validation_failed",provider_code:clean(accountData?.error?.code,48)});
   const graphAccountId=clean(String(accountData.id||instagramUserId),180);
-  const externalId=clean(String(accountData.user_id||accountData.id||""),180)||instagramUserId,username=clean(accountData.username,160)||"viagemperfeitatrip";
+  const externalId=clean(String(accountData.user_id||accountData.id||""),180)||instagramUserId,username=clean(accountData.username,160);
+  // Este CRM pertence exclusivamente à conta oficial da Viagem Perfeita. Não
+  // aceite uma identidade diferente nem use um nome padrão quando a Meta não
+  // devolver o username: isso poderia conectar silenciosamente a conta errada.
+  if(username.toLocaleLowerCase("pt-BR")!=="viagemperfeitatrip")
+    return json({connected:false,error:"wrong_instagram_account",expected_username:"viagemperfeitatrip",received_username:username||null},409);
   const subscribedFields=["messages","message_reactions","messaging_postbacks","messaging_seen","messaging_referral","comments","live_comments","mentions"];
   const subscriptionUrl=new URL(`https://graph.instagram.com/v25.0/${encodeURIComponent(graphAccountId)}/subscribed_apps`);
   const subscriptionResponse=await fetch(subscriptionUrl,{

@@ -97,6 +97,9 @@ Deno.serve(async request=>{
       const accountExternalId=clean(entry.id,160);
       const account=await resolveMetaChannelAccount(admin,"instagram",accountExternalId);
       if(!account)continue;
+      // Defesa em profundidade: webhooks de contas antigas ou conectadas por
+      // engano nunca entram na caixa nem acionam a IA da Viagem Perfeita.
+      if(clean(account.settings?.username,160).toLocaleLowerCase("pt-BR")!=="viagemperfeitatrip")continue;
       for(const event of entry.messaging||[])await handleDirectMessage(admin,entry,event,account,supabaseUrl,serviceKey,workerSecret);
       for(const change of entry.changes||[]){
       const value=change.value||{},field=clean(change.field,80),type=eventType(field,value);
