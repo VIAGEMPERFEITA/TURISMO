@@ -12,6 +12,7 @@ const route=fs.readFileSync("app/admin/[module]/page.tsx","utf8");
 const oauth=fs.readFileSync("supabase/functions/instagram-oauth-connect/index.ts","utf8");
 const activation=fs.readFileSync("supabase/migrations/202608230003_activate_validated_instagram_flows.sql","utf8");
 const accountResolver=fs.readFileSync("supabase/functions/_shared/meta-account.ts","utf8");
+const officialDedup=fs.readFileSync("supabase/migrations/202611010003_deduplicate_official_instagram_connection.sql","utf8");
 
 test("Instagram automation is tenant-safe, auditable and blocked before connection",()=>{
  assert.match(migration,/social_automation_executions/);
@@ -93,6 +94,10 @@ test("Instagram accepts and processes only the official viagemperfeitatrip ident
  assert.doesNotMatch(oauth,/accountData\.username,160\)\|\|"viagemperfeitatrip"/);
  assert.match(webhook,/account\.settings\?\.username/);
  assert.match(webhook,/!=="viagemperfeitatrip"\)continue/);
+ assert.match(officialDedup,/row_number\(\) over/);
+ assert.match(officialDedup,/connected_at/);
+ assert.match(officialDedup,/position>1/);
+ assert.match(officialDedup,/status='encerrada'/);
 });
 
 test("recipient-specific delivery failure pauses only that conversation",()=>{
