@@ -25,3 +25,13 @@ test("IA não transfere cedo quando há preço ou pagamento aprovado", () => {
   for (const source of [site, whatsapp]) assert.match(source, /Não transfira apenas porque o cliente perguntou preço ou pagamento/);
   assert.match(site, /Para valores e formas de pagamento, use os dados aprovados retornados pelo CRM/);
 });
+
+test("atendimento segue padrões humanos de concisão, confirmação e escalada progressiva", () => {
+  for (const source of [site, whatsapp]) {
+    assert.match(source, /Prefira respostas de até 100 palavras/);
+    assert.match(source, /confirme de modo contextual se aquilo resolveu a dúvida/);
+    assert.match(source, /faça uma tentativa objetiva de esclarecimento/);
+    assert.match(source, /no segundo sinal sem resolução, transfira/);
+    assert.match(source, /para o cliente não precisar repetir a história/);
+  }
+});
