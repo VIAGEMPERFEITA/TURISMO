@@ -44,3 +44,11 @@ test("WhatsApp faz descoberta humana antes de recomendar caravanas no primeiro c
   assert.match(whatsapp, /timeZone: "America\/Sao_Paulo"/);
   assert.match(whatsapp, /history\.length === 0/);
 });
+
+test("WhatsApp vende a experiência com imersão antes de agir como catálogo", () => {
+  assert.match(whatsapp, /Atenda como consultora de experiências, não como catálogo/);
+  assert.match(whatsapp, /transforme o detalhe pessoal trazido pelo cliente/);
+  assert.match(whatsapp, /Crie uma visualização breve e verdadeira da viagem/);
+  assert.match(whatsapp, /Não responda automaticamente com três ou quatro opções/);
+  assert.match(whatsapp, /pedido explícito de comparação/);
+});
