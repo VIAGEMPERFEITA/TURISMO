@@ -115,6 +115,9 @@ Regras obrigatórias:
 - Se ai_can_quote=true, você pode informar somente o preço-base e a política cambial retornados. Se ai_can_simulate=false, não informe parcelas como válidas e diga que a equipe confirmará a composição.
 - Quando o CRM retornar uma cotação de câmbio aprovada, explique que ela está congelada para aquela proposta durante a validade registrada. Não consulte, recalcule ou substitua esse câmbio. Se não houver cotação ou validade aprovada, informe o preço somente na moeda-base e encaminhe a conversão para a equipe.
 - Responda primeiro ao que foi perguntado, use português brasileiro natural, mensagens curtas e apenas uma pergunta por vez. Use o primeiro nome com moderação, não repita apresentações, evite listas automáticas e emojis excessivos, reconheça emoções sem criar urgência falsa e nunca finja ser humano.
+- No primeiro contato, não comece despejando uma lista de caravanas, preços ou roteiros. Primeiro acolha, cumprimente conforme o horário local informado, use o primeiro nome quando ele estiver confirmado e pergunte de forma breve como a pessoa está.
+- Ainda no primeiro contato, reconheça somente o interesse que o cliente realmente mencionou, apresente em uma ou duas frases a proposta das caravanas da Viagem Perfeita e faça uma única pergunta de descoberta para entender destino, tipo de experiência, período ou companhia de viagem. Só recomende opções depois dessa resposta.
+- Não presuma Israel, outro destino, perfil religioso, orçamento ou preferência que o cliente não informou. Se o pedido for genérico, descubra primeiro o que ele busca.
 - Conduza uma conversa contínua: conecte cada resposta ao que o cliente acabou de dizer, varie confirmações e transições e não reinicie o atendimento a cada mensagem.
 - Avance gradualmente até a intenção de fechamento: descoberta, escolha da caravana, esclarecimento, qualificação e preparação da transferência. Não transfira apenas porque o cliente perguntou preço ou pagamento quando houver dado oficial aprovado.
 - Espelhe com naturalidade uma informação importante que o cliente acabou de fornecer, sem repetir a frase inteira. Evite saudações roteirizadas, menus de opções e bordões de atendimento.
@@ -283,6 +286,21 @@ Deno.serve(async request => {
       return json({ status: "ignorado", handoff: true, reason: "moderation" });
     }
 
+    const leadResult = conversation.lead_id
+      ? await admin.from("leads").select("name").eq("id", conversation.lead_id).maybeSingle()
+      : { data: null, error: null };
+    if (leadResult.error) throw leadResult.error;
+    const customerName = clean(leadResult.data?.name, 120);
+    const firstName = clean(customerName.split(/\s+/)[0], 40);
+    const localHour = Number(new Intl.DateTimeFormat("pt-BR", {
+      timeZone: "America/Sao_Paulo",
+      hour: "2-digit",
+      hourCycle: "h23",
+    }).format(new Date()));
+    const localGreeting = localHour >= 5 && localHour < 12 ? "Bom dia"
+      : localHour >= 12 && localHour < 18 ? "Boa tarde"
+      : "Boa noite";
+
     const historyResult = await admin.from("messages").select("id,direction,body,sent_at")
       .eq("conversation_id", conversation.id).in("direction", ["entrada", "saida"])
       .not("body", "is", null).order("sent_at", { ascending: false }).limit(24);
@@ -300,7 +318,10 @@ Deno.serve(async request => {
     const webResearchEnabled = enabledToolNames.has("web_search") && researchPolicy?.enabled === true;
     const enabledTools: any[] = tools.filter(tool => enabledToolNames.has(tool.name));
     if (webResearchEnabled) enabledTools.push({ type: "web_search", search_context_size: "low" });
-    const runtimeInstructions = `${instructions}\n\nPolítica de pesquisa desta organização:\n- Tópicos permitidos: ${(researchPolicy?.allowed_topics || []).join(", ") || "nenhum"}.\n- Tópicos proibidos para fontes externas: ${(researchPolicy?.prohibited_topics || []).join(", ") || "todos os dados comerciais"}.\n- Pesquise apenas quando a pergunta exigir contexto de destino ou verificação atual em fonte oficial e o CRM/base aprovada não forem suficientes.`;
+    const firstContactInstruction = history.length === 0
+      ? `Este é o primeiro contato desta conversa. A saudação local agora é "${localGreeting}". ${firstName ? `O primeiro nome cadastrado é "${firstName}"; use-o uma vez, com naturalidade.` : "O primeiro nome não está confirmado; cumprimente sem nome e descubra-o depois."} Não apresente uma lista de opções ainda: acolha, introduza brevemente a experiência e faça uma pergunta de descoberta.`
+      : "Esta conversa já começou. Não repita saudação, apresentação nem o nome sem necessidade; continue exatamente do ponto anterior.";
+    const runtimeInstructions = `${instructions}\n\nContexto de atendimento:\n- ${firstContactInstruction}\n\nPolítica de pesquisa desta organização:\n- Tópicos permitidos: ${(researchPolicy?.allowed_topics || []).join(", ") || "nenhum"}.\n- Tópicos proibidos para fontes externas: ${(researchPolicy?.prohibited_topics || []).join(", ") || "todos os dados comerciais"}.\n- Pesquise apenas quando a pergunta exigir contexto de destino ou verificação atual em fonte oficial e o CRM/base aprovada não forem suficientes.`;
     let response: any = null;
     let handoff = false;
     let handoffReason = "";

@@ -35,3 +35,12 @@ test("atendimento segue padrões humanos de concisão, confirmação e escalada 
     assert.match(source, /para o cliente não precisar repetir a história/);
   }
 });
+
+test("WhatsApp faz descoberta humana antes de recomendar caravanas no primeiro contato", () => {
+  assert.match(whatsapp, /No primeiro contato, não comece despejando uma lista de caravanas/);
+  assert.match(whatsapp, /cumprimente conforme o horário local informado/);
+  assert.match(whatsapp, /faça uma única pergunta de descoberta/);
+  assert.match(whatsapp, /Não presuma Israel/);
+  assert.match(whatsapp, /timeZone: "America\/Sao_Paulo"/);
+  assert.match(whatsapp, /history\.length === 0/);
+});
