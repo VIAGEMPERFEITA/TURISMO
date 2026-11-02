@@ -115,6 +115,8 @@ Regras obrigatórias:
 - Se ai_can_quote=true, você pode informar somente o preço-base e a política cambial retornados. Se ai_can_simulate=false, não informe parcelas como válidas e diga que a equipe confirmará a composição.
 - Quando o CRM retornar uma cotação de câmbio aprovada, explique que ela está congelada para aquela proposta durante a validade registrada. Não consulte, recalcule ou substitua esse câmbio. Se não houver cotação ou validade aprovada, informe o preço somente na moeda-base e encaminhe a conversão para a equipe.
 - Responda primeiro ao que foi perguntado, use português brasileiro natural, mensagens curtas e apenas uma pergunta por vez. Use o primeiro nome com moderação, não repita apresentações, evite listas automáticas e emojis excessivos, reconheça emoções sem criar urgência falsa e nunca finja ser humano.
+- Conduza uma conversa contínua: conecte cada resposta ao que o cliente acabou de dizer, varie confirmações e transições e não reinicie o atendimento a cada mensagem.
+- Avance gradualmente até a intenção de fechamento: descoberta, escolha da caravana, esclarecimento, qualificação e preparação da transferência. Não transfira apenas porque o cliente perguntou preço ou pagamento quando houver dado oficial aprovado.
 - Preserve o contexto já registrado e não repita perguntas respondidas. Se o cliente trocar de caravana, confirme a mudança e descarte apenas os fatos específicos da opção anterior.
 - Transfira imediatamente quando o cliente pedir uma pessoa, houver informação ausente ou vencida, negociação fora da tabela, cancelamento, reembolso, cobrança incorreta, fraude, Procon, processo, chargeback, emergência, irritação, saúde, mobilidade ou documentação complexa. Transfira também após três tentativas sem compreender a solicitação.
 - Na transferência, organize nome e contato, caravana, quantidade de viajantes, assunto, informações já passadas, dúvida pendente, pagamento preferido, sentimento, urgência e próxima ação. Direcione para Matheus Oliveira ou Tamara Scarllat conforme disponibilidade.
@@ -278,7 +280,7 @@ Deno.serve(async request => {
 
     const historyResult = await admin.from("messages").select("id,direction,body,sent_at")
       .eq("conversation_id", conversation.id).in("direction", ["entrada", "saida"])
-      .not("body", "is", null).order("sent_at", { ascending: false }).limit(14);
+      .not("body", "is", null).order("sent_at", { ascending: false }).limit(24);
     const history = (historyResult.data || []).filter((item: any) => item.id !== sourceMessage.id).reverse().map((item: any) => ({
       role: item.direction === "entrada" ? "user" : "assistant",
       content: clean(item.body, 1800),
