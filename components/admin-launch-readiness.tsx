@@ -100,6 +100,15 @@ export function AdminLaunchReadiness() {
     await load();
   };
 
+  const runMetaReviewTest = async () => {
+    const client = getSupabaseBrowserClient(); if (!client) return;
+    setLoading(true);
+    const { data, error } = await client.functions.invoke("meta-review-read-test", { body: {} });
+    setLastOperation((data ?? null) as Record<string, unknown> | null);
+    setMessage(error ? "A leitura de homologação da Meta encontrou uma pendência. Consulte o resultado abaixo." : "Chamadas de leitura do Instagram e Messenger concluídas sem envio externo.");
+    await load();
+  };
+
   const emergencyStop = async () => {
     if (!window.confirm("Confirmar parada de emergência? Fluxos serão pausados, campanhas reais serão bloqueadas e as integrações voltarão à simulação.")) return;
     const reason = window.prompt("Informe o motivo operacional da parada (mínimo de 10 caracteres):");
@@ -135,7 +144,7 @@ export function AdminLaunchReadiness() {
     <div className="crm-panel-head"><div><ShieldCheck/><h2>Prontidão para lançamento</h2><p>Diagnóstico consolidado sem executar mensagens ou ativações externas.</p></div><button onClick={load} disabled={loading}><RefreshCw className={loading ? "spin" : ""}/>Atualizar</button></div>
     {message ? <div className="crm-alert">{message}</div> : null}
     <div className="campaign-rates"><span>Itens prontos <b>{readyCount}/{checks.length}</b></span><span>Não lidas <b>{readiness ? readiness.unread_conversations ?? 0 : "—"}</b></span><span>Modo seguro <b>Ativo</b></span></div>
-    <div className="crm-inline-actions"><button onClick={() => void runSafeOperation("guardian")} disabled={loading}><ShieldCheck/>Executar diagnóstico</button><button onClick={() => void runSafeOperation("simulation")} disabled={loading}><FlaskConical/>Simular três canais</button><button onClick={() => void emergencyStop()} disabled={loading}><PauseCircle/>Parada de emergência</button></div>
+    <div className="crm-inline-actions"><button onClick={() => void runSafeOperation("guardian")} disabled={loading}><ShieldCheck/>Executar diagnóstico</button><button onClick={() => void runMetaReviewTest()} disabled={loading}><ShieldCheck/>Registrar testes Meta</button><button onClick={() => void runSafeOperation("simulation")} disabled={loading}><FlaskConical/>Simular três canais</button><button onClick={() => void emergencyStop()} disabled={loading}><PauseCircle/>Parada de emergência</button></div>
     <ul className="ai-safety-list">{checks.map(item => <li key={item.label}>{item.ready ? <CheckCircle2/> : item.label.includes("Meta") || item.label.includes("Modelos") ? <Clock3/> : <AlertTriangle/>}<span><b>{item.label}</b><small>{item.detail}</small></span></li>)}</ul>
     {lastOperation ? <details><summary>Resultado da última operação</summary><pre>{JSON.stringify(lastOperation, null, 2)}</pre></details> : null}
     <p className="crm-muted">A aprovação da Meta, a criação de acesso persistente e qualquer envio real continuam exigindo validação no momento da ação.</p>
