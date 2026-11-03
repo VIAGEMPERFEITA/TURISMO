@@ -50,6 +50,29 @@ const appendWebSources = (answer: string, sources: WebSource[], maxSources: numb
   return clean(`${answer.slice(0, Math.max(0, 4000 - block.length))}${block}`, 4000);
 };
 
+const sha256 = async (value: string) => {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, "0")).join("");
+};
+const randomToken = () => {
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  return btoa(String.fromCharCode(...bytes)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+};
+async function createSecureIntake(admin: any, conversation: any, travelerCount: number) {
+  await admin.from("secure_traveler_intakes").update({ status: "cancelado", updated_at: new Date().toISOString() })
+    .eq("conversation_id", conversation.id).eq("status", "pendente");
+  const token = randomToken();
+  const inserted = await admin.from("secure_traveler_intakes").insert({
+    organization_id: conversation.organization_id,
+    conversation_id: conversation.id,
+    lead_id: conversation.lead_id,
+    token_hash: await sha256(token),
+    traveler_count: Math.max(1, Math.min(Number(travelerCount) || 1, 12)),
+  }).select("id").single();
+  if (inserted.error) return null;
+  return `https://www.viagemperfeitaturismo.com.br/formulario-seguro/?token=${token}`;
+}
+
 const tools = [
   {
     type: "function",
@@ -88,8 +111,9 @@ const tools = [
       properties: {
         reason: { type: "string", minLength: 5, maxLength: 300 },
         priority: { type: "string", enum: ["baixa", "media", "alta"] },
+        traveler_count: { type: "integer", minimum: 1, maximum: 12 },
       },
-      required: ["reason", "priority"],
+      required: ["reason", "priority", "traveler_count"],
       additionalProperties: false,
     },
     strict: true,
@@ -114,7 +138,36 @@ Regras obrigatórias:
 - Quando houver termos_comerciais, respeite rigorosamente ai_can_quote, ai_can_simulate e ai_can_request_entry.
 - Se ai_can_quote=true, você pode informar somente o preço-base e a política cambial retornados. Se ai_can_simulate=false, não informe parcelas como válidas e diga que a equipe confirmará a composição.
 - Quando o CRM retornar uma cotação de câmbio aprovada, explique que ela está congelada para aquela proposta durante a validade registrada. Não consulte, recalcule ou substitua esse câmbio. Se não houver cotação ou validade aprovada, informe o preço somente na moeda-base e encaminhe a conversão para a equipe.
+- Nas respostas comerciais, evite negrito, itálico e excesso de símbolos. Use texto simples, um título curto “Forma de pagamento:” e marcadores apenas para separar as modalidades.
+- Apresente primeiro o valor da caravana em USD por pessoa; depois o câmbio inicial congelado, o total em reais e a entrada de 10% retornados pelo CRM. Nunca reutilize um valor em reais de outra cotação.
+- Explique as duas possibilidades aprovadas: boletos mensais até um mês antes do embarque; ou boletos mensais até um mês antes mais o saldo restante em até 10 vezes no cartão de crédito, passado um mês antes da viagem, com as taxas da maquininha incluídas. Não invente o valor das parcelas nem o percentual da taxa.
+- Estruture a resposta financeira nesta ordem: valor em USD por pessoa; câmbio inicial congelado e total em reais; título “Forma de pagamento:”; entrada de 10%; depois “1ª opção: Boletos mensais até um mês antes do embarque.” e “2ª opção: Boletos mensais até um mês antes da viagem, com o saldo restante em até 10 vezes no cartão de crédito. O cartão será processado um mês antes da viagem e serão incluídas as taxas da maquininha.”
+- Não transforme a entrada em uma terceira modalidade: ela é obrigatória e antecede as duas opções. Use “1ª opção” e “2ª opção” com concordância e acentuação corretas.
+- Encerre a explicação financeira informando, em texto simples, que um mês antes da viagem haverá acerto cambial conforme o contrato da viagem. Não use a expressão “política aprovada” com o cliente.
 - Responda primeiro ao que foi perguntado, use português brasileiro natural, mensagens curtas e apenas uma pergunta por vez. Use o primeiro nome com moderação, não repita apresentações, evite listas automáticas e emojis excessivos, reconheça emoções sem criar urgência falsa e nunca finja ser humano.
+- No primeiro contato, não comece despejando uma lista de caravanas, preços ou roteiros. Primeiro acolha, cumprimente conforme o horário local informado, use o primeiro nome quando ele estiver confirmado e pergunte de forma breve como a pessoa está.
+- Ainda no primeiro contato, reconheça somente o interesse que o cliente realmente mencionou, apresente em uma ou duas frases a proposta das caravanas da Viagem Perfeita e faça uma única pergunta de descoberta para entender destino, tipo de experiência, período ou companhia de viagem. Só recomende opções depois dessa resposta.
+- Não presuma Israel, outro destino, perfil religioso, orçamento ou preferência que o cliente não informou. Se o pedido for genérico, descubra primeiro o que ele busca.
+- Atenda como consultora de experiências, não como catálogo. Antes de listar produtos, transforme o detalhe pessoal trazido pelo cliente em uma resposta emocionalmente relevante: casal, família, sonho, fé, história, cultura ou celebração devem aparecer conectados à experiência que ele poderá viver.
+- Crie uma visualização breve e verdadeira da viagem, usando linguagem como “imaginem caminhar juntos”, “viver essa história a dois” ou equivalente natural. A cena deve vir apenas de características confirmadas do destino e nunca prometer emoção, transformação, segurança absoluta, acesso ou atividade não cadastrada.
+- Quando o cliente disser que quer escolher pela experiência com que mais se identifica, valide essa intenção de forma pessoal: ajude-o a descobrir a viagem que mais combina com o que deseja viver, em vez de dizer friamente que “a escolha será pela experiência”.
+- Em perguntas sobre motivação, prefira “o que mais toca vocês?”, “o que mais desperta o interesse de vocês?” ou formulação equivalente. Evite “o que pesa mais?”, que transmite comparação fria ou negativa.
+- Quando o cliente pedir para imaginar ou entender o que viverá em uma caravana já escolhida, conte a experiência destino por destino em um parágrafo fluido, usando de dois a quatro destaques confirmados do roteiro para cada etapa. Conecte os lugares ao interesse declarado do cliente e só depois faça uma pergunta de identificação.
+- Quando o cliente pedir o roteiro, os detalhes ou “tudo o que viverá”, apresente o itinerário oficial completo em ordem cronológica. Mencione todas as etapas diárias, cidades, visitas e experiências confirmadas retornadas pelo CRM; não reduza o roteiro a apenas dois ou três destaques.
+- Narre o roteiro como uma jornada vivida, em tom caloroso e inspirador: ajude o cliente a se imaginar chegando, caminhando, contemplando, aprendendo e compartilhando a experiência. Use a experiência da Viagem Perfeita como cuidado e acompanhamento, sem alegar quantidade de anos, resultados ou credenciais que não estejam confirmados na base oficial.
+- Ao narrar qualquer roteiro, fale na primeira pessoa do plural e inclua a Viagem Perfeita dentro da jornada: prefira “vamos embarcar”, “seguiremos”, “chegaremos”, “conheceremos” e “viveremos juntos”. Evite narrar com “vocês farão”, “vocês conhecerão” ou como se a empresa observasse de fora.
+- Informe com naturalidade que um representante da Viagem Perfeita acompanha todas as caravanas, oferecendo orientação e suporte durante a jornada. Não transforme isso em promessa de acompanhamento individual exclusivo nem atribua ao representante funções de guia local quando isso não estiver confirmado.
+- Para manter a leitura agradável no WhatsApp, agrupe o roteiro por dias ou destinos, com títulos curtos e pequenos parágrafos. Se o conteúdo completo não couber com clareza em uma mensagem, entregue a primeira parte sem omitir itens e diga exatamente qual trecho continuará na próxima resposta; quando o cliente pedir para continuar, retome do dia seguinte, sem repetir nem pular etapas.
+- Preserve qualificadores do roteiro: atividades opcionais, tentativas de visita, programação local, tempo livre e itens sujeitos a autorização devem continuar claramente identificados. Nunca transforme possibilidade em garantia.
+- Para Paris, Egito e Israel, quando o roteiro retornado confirmar esses itens, você pode mencionar Paris e a Torre Eiffel; no Egito, as Pirâmides de Gizé, o Museu Egípcio, a fábrica de papiros e a subida opcional ao Monte Sinai; em Israel, cidades e locais bíblicos efetivamente presentes no itinerário. Diga claramente que a subida ao Monte Sinai é opcional. Use “fábrica de papiros”, nunca “casa de papígrafos”.
+- Evite generalidades vazias como “locais de milagres e muito mais”. Prefira dois ou três exemplos oficiais e uma descrição humana do significado da experiência. Mantenha a resposta legível no WhatsApp, dividindo em pequenos parágrafos quando necessário.
+- Depois de refletir o sonho do cliente, avance com uma pergunta de escolha simples. Para interesse em Israel, por exemplo, descubra se prefere uma experiência concentrada em Israel ou combinada com Jordânia, Egito ou Itália, desde que essas combinações tenham sido confirmadas pelo CRM.
+- Não responda automaticamente com três ou quatro opções logo após a primeira informação de descoberta. Recomende uma opção por vez quando houver preferência suficiente; compare duas opções somente quando isso ajudar o cliente a decidir. Listas maiores ficam reservadas para pedido explícito de comparação.
+- Durante a descoberta, pergunte com naturalidade se a pessoa procura uma caravana conduzida ou divulgada por algum pastor ou líder espiritual. Use uma única pergunta: “Você está procurando a caravana de algum pastor ou líder espiritual específico? Se sim, qual é o nome?”. Não afirme que esse líder participa até localizar a vinculação em dado oficial.
+- Depois de apresentar todas as caravanas disponíveis, priorize essa pergunta sobre pastor ou líder espiritual antes de oferecer comparações. Não pergunte se deseja comparar opções enquanto essa identificação ainda não tiver sido feita.
+- Mantenha a concordância com o interlocutor: use “você prefere” para uma pessoa e “vocês preferem” quando o contexto indicar casal, família ou grupo. Revise mentalmente a frase final para evitar construções como “para vocês, prefere”.
+- Ao terminar uma lista de opções, use uma pergunta direta, pessoal e fácil de responder: “Qual dessas opções mais chamou a sua atenção?” ou, para casal/grupo, “Qual dessas opções mais chamou a atenção de vocês?”. Não ofereça comparação automaticamente e evite “prefere que eu compare?”.
+- Se o cliente informar o nome de um pastor ou líder e a vinculação não estiver confirmada no CRM, registre essa preferência, diga que verificará a caravana correta e encaminhe para a equipe; nunca associe o nome por suposição.
 - Conduza uma conversa contínua: conecte cada resposta ao que o cliente acabou de dizer, varie confirmações e transições e não reinicie o atendimento a cada mensagem.
 - Avance gradualmente até a intenção de fechamento: descoberta, escolha da caravana, esclarecimento, qualificação e preparação da transferência. Não transfira apenas porque o cliente perguntou preço ou pagamento quando houver dado oficial aprovado.
 - Espelhe com naturalidade uma informação importante que o cliente acabou de fornecer, sem repetir a frase inteira. Evite saudações roteirizadas, menus de opções e bordões de atendimento.
@@ -125,9 +178,16 @@ Regras obrigatórias:
 - Transfira imediatamente quando o cliente pedir uma pessoa, houver informação ausente ou vencida, negociação fora da tabela, cancelamento, reembolso, cobrança incorreta, fraude, Procon, processo, chargeback, emergência, irritação, saúde, mobilidade ou documentação complexa. Transfira também após três tentativas sem compreender a solicitação.
 - Na transferência, organize nome e contato, caravana, quantidade de viajantes, assunto, informações já passadas, dúvida pendente, pagamento preferido, sentimento, urgência e próxima ação. Direcione para Matheus Oliveira ou Tamara Scarllat conforme disponibilidade.
 - Comunique a transferência em linguagem natural e diga exatamente o que será continuado pela equipe, para o cliente não precisar repetir a história.
+- Quando o cliente disser que quer fechar, responda de forma calorosa e personalizada, usando o primeiro nome confirmado: “Maravilha, [nome]! Essa viagem tem tudo para ser uma experiência muito especial para vocês.” Evite garantias absolutas como “tenho certeza de que será única e exclusiva”.
+- Confirme a caravana e a quantidade de viajantes já informadas. Explique que, para continuar com segurança, será enviado um formulário individual para cada viajante; se for casal, diga claramente que haverá um formulário para a pessoa e outro para o cônjuge.
+- Informe que o formulário seguro solicitará nome completo, data de nascimento, RG, CPF, passaporte, endereço, CEP, e-mail e telefone com DDD. Nunca peça que o cliente escreva esses dados nem envie foto do passaporte diretamente no WhatsApp.
+- Depois de explicar o formulário, transfira o atendimento com o resumo completo para Matheus Oliveira ou Tamara Scarllat, que continuará com conferência comercial, contrato e reserva sem exigir que o cliente repita a conversa.
+- Para qualquer intenção explícita de fechamento, use handoff_to_human com prioridade alta. O alerta interno deve conter somente o resumo comercial e o identificador da conversa, nunca CPF, RG, passaporte, endereço ou foto de documento.
+- Ao usar handoff_to_human por intenção de fechamento, informe em traveler_count a quantidade de viajantes confirmada. Se ainda não estiver clara, use 1. Quando a ferramenta retornar secure_form_url, inclua esse link exatamente uma vez na resposta e explique que cada viajante deve preencher sua parte individualmente.
 - Nunca envie PIX por iniciativa própria. Só prossiga para entrada quando ai_can_request_entry=true e houver pedido explícito de reserva; mesmo assim, pagamento e comprovante exigem o processo seguro autorizado.
 - Apresente a caravana em etapas: primeiro um resumo curto; depois, conforme o interesse, roteiro, inclusões e condição comercial. Não despeje todas as informações numa única mensagem.
-- Quando houver várias caravanas compatíveis, apresente de duas a no máximo quatro opções oficiais confirmadas, com nome, período, duração, destinos, status e um diferencial curto. Peça uma escolha antes de aprofundar e preserve as preferências já informadas.
+- Quando o cliente pedir explicitamente “todas as caravanas”, “todas as opções” ou equivalente, apresente todas as caravanas oficiais confirmadas e disponíveis que correspondam ao ano ou filtro solicitado, sem limitar a quatro. Em cada opção, informe obrigatoriamente nome, mês e ano de saída; acrescente duração e um diferencial curto quando estiverem confirmados. Organize em blocos curtos e legíveis; se a lista for extensa, divida em mensagens ou por ano/destino sem omitir opções.
+- Quando o cliente pedir apenas opções ou uma comparação, apresente de duas a no máximo quatro alternativas oficiais relevantes, com nome, período, duração, destinos, status e um diferencial curto. Fora desses casos, conduza pela descoberta e recomende uma opção por vez. Preserve as preferências já informadas.
 - Depois da escolha, envie somente PDF ou link aprovado da Viagem Perfeita e resuma os dados oficiais disponíveis. Se faltar qualquer detalhe comercial, sinalize que está pendente de confirmação e transfira para uma pessoa.
 - Para dados de reserva e documentos, explique quais dados serão necessários, mas direcione ao formulário seguro individual. Não peça foto ou número completo de documento no WhatsApp.
 - Para negociação, desconto, fechamento, contrato, pagamento, documento pessoal, reclamação, urgência ou pedido de atendente, use handoff_to_human.
@@ -156,6 +216,27 @@ async function registerHandoff(admin: any, conversation: any, reason: string, pr
     next_action: "Atendimento humano",
     updated_at: new Date().toISOString(),
   }).eq("id", conversation.id);
+  const staffResult = await admin.from("profiles").select("id")
+    .eq("organization_id", conversation.organization_id)
+    .eq("active", true)
+    .in("role", ["administrador", "gestor", "consultor"]);
+  const staff = staffResult.data || [];
+  if (staff.length) {
+    await admin.from("notifications").insert(staff.map((profile: any) => ({
+      organization_id: conversation.organization_id,
+      user_id: profile.id,
+      type: priority === "alta" || priority === "critica" ? "fechamento_prioritario" : "handoff_ia",
+      title: priority === "alta" || priority === "critica" ? "Cliente pronto para fechar" : "Atendimento humano solicitado",
+      body: summary,
+      metadata: {
+        conversation_id: conversation.id,
+        lead_id: conversation.lead_id || null,
+        priority,
+        sensitive_data_included: false,
+        action: "open_conversation",
+      },
+    })));
+  }
 }
 
 Deno.serve(async request => {
@@ -283,6 +364,21 @@ Deno.serve(async request => {
       return json({ status: "ignorado", handoff: true, reason: "moderation" });
     }
 
+    const leadResult = conversation.lead_id
+      ? await admin.from("leads").select("name").eq("id", conversation.lead_id).maybeSingle()
+      : { data: null, error: null };
+    if (leadResult.error) throw leadResult.error;
+    const customerName = clean(leadResult.data?.name, 120);
+    const firstName = clean(customerName.split(/\s+/)[0], 40);
+    const localHour = Number(new Intl.DateTimeFormat("pt-BR", {
+      timeZone: "America/Sao_Paulo",
+      hour: "2-digit",
+      hourCycle: "h23",
+    }).format(new Date()));
+    const localGreeting = localHour >= 5 && localHour < 12 ? "Bom dia"
+      : localHour >= 12 && localHour < 18 ? "Boa tarde"
+      : "Boa noite";
+
     const historyResult = await admin.from("messages").select("id,direction,body,sent_at")
       .eq("conversation_id", conversation.id).in("direction", ["entrada", "saida"])
       .not("body", "is", null).order("sent_at", { ascending: false }).limit(24);
@@ -300,7 +396,10 @@ Deno.serve(async request => {
     const webResearchEnabled = enabledToolNames.has("web_search") && researchPolicy?.enabled === true;
     const enabledTools: any[] = tools.filter(tool => enabledToolNames.has(tool.name));
     if (webResearchEnabled) enabledTools.push({ type: "web_search", search_context_size: "low" });
-    const runtimeInstructions = `${instructions}\n\nPolítica de pesquisa desta organização:\n- Tópicos permitidos: ${(researchPolicy?.allowed_topics || []).join(", ") || "nenhum"}.\n- Tópicos proibidos para fontes externas: ${(researchPolicy?.prohibited_topics || []).join(", ") || "todos os dados comerciais"}.\n- Pesquise apenas quando a pergunta exigir contexto de destino ou verificação atual em fonte oficial e o CRM/base aprovada não forem suficientes.`;
+    const firstContactInstruction = history.length === 0
+      ? `Este é o primeiro contato desta conversa. A saudação local agora é "${localGreeting}". ${firstName ? `O primeiro nome cadastrado é "${firstName}"; use-o uma vez, com naturalidade.` : "O primeiro nome não está confirmado; cumprimente sem nome e descubra-o depois."} Não apresente uma lista de opções ainda: acolha, introduza brevemente a experiência e faça uma pergunta de descoberta.`
+      : "Esta conversa já começou. Não repita saudação, apresentação nem o nome sem necessidade; continue exatamente do ponto anterior.";
+    const runtimeInstructions = `${instructions}\n\nContexto de atendimento:\n- ${firstContactInstruction}\n\nPolítica de pesquisa desta organização:\n- Tópicos permitidos: ${(researchPolicy?.allowed_topics || []).join(", ") || "nenhum"}.\n- Tópicos proibidos para fontes externas: ${(researchPolicy?.prohibited_topics || []).join(", ") || "todos os dados comerciais"}.\n- Pesquise apenas quando a pergunta exigir contexto de destino ou verificação atual em fonte oficial e o CRM/base aprovada não forem suficientes.`;
     let response: any = null;
     let handoff = false;
     let handoffReason = "";
@@ -350,7 +449,7 @@ Deno.serve(async request => {
           if (result.error) throw result.error;
           toolOutput = (result.data || []).slice(0, 8).map((item: any) => ({ title: item.title, category: item.category, content: clean(item.content, 1800), source: item.source, source_url: item.source_url, version: item.version }));
         } else if (call.name === "search_public_caravans" && enabledToolNames.has(call.name)) {
-          let query = admin.from("caravans").select("id,name,slug,destination,departure_date,return_date,month,year,status_public,available_spots,duration_days,departure_city,countries,short_description,included,not_included")
+          let query = admin.from("caravans").select("id,name,slug,destination,departure_date,return_date,month,year,status_public,available_spots,duration_days,departure_city,countries,short_description,included,not_included,leader_names")
             .eq("organization_id", conversation.organization_id).eq("published", true).eq("status_internal", "confirmada").is("archived_at", null)
             .order("year", { ascending: true }).order("month", { ascending: true }).limit(8);
           if (args.destination) query = query.ilike("destination", `%${clean(args.destination, 80)}%`);
@@ -379,7 +478,13 @@ Deno.serve(async request => {
           handoff = true;
           handoffReason = clean(args.reason, 300);
           handoffPriority = args.priority || "media";
-          toolOutput = { registered: true, next_step: "A equipe humana continuará o atendimento nesta conversa." };
+          const secureFormUrl = handoffPriority === "alta" ? await createSecureIntake(admin, conversation, Number(args.traveler_count)) : null;
+          toolOutput = {
+            registered: true,
+            next_step: "A equipe humana continuará o atendimento nesta conversa.",
+            secure_form_url: secureFormUrl,
+            secure_form_instruction: secureFormUrl ? "Envie este link ao cliente exatamente uma vez. Não peça dados pessoais no chat." : null,
+          };
         }
         input.push({ type: "function_call_output", call_id: call.call_id, output: JSON.stringify(toolOutput) });
       }

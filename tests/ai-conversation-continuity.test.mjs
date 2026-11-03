@@ -35,3 +35,59 @@ test("atendimento segue padrões humanos de concisão, confirmação e escalada 
     assert.match(source, /para o cliente não precisar repetir a história/);
   }
 });
+
+test("WhatsApp faz descoberta humana antes de recomendar caravanas no primeiro contato", () => {
+  assert.match(whatsapp, /No primeiro contato, não comece despejando uma lista de caravanas/);
+  assert.match(whatsapp, /cumprimente conforme o horário local informado/);
+  assert.match(whatsapp, /faça uma única pergunta de descoberta/);
+  assert.match(whatsapp, /Não presuma Israel/);
+  assert.match(whatsapp, /timeZone: "America\/Sao_Paulo"/);
+  assert.match(whatsapp, /history\.length === 0/);
+});
+
+test("WhatsApp vende a experiência com imersão antes de agir como catálogo", () => {
+  assert.match(whatsapp, /Atenda como consultora de experiências, não como catálogo/);
+  assert.match(whatsapp, /transforme o detalhe pessoal trazido pelo cliente/);
+  assert.match(whatsapp, /Crie uma visualização breve e verdadeira da viagem/);
+  assert.match(whatsapp, /Não responda automaticamente com três ou quatro opções/);
+  assert.match(whatsapp, /pedido explícito de comparação/);
+  assert.match(whatsapp, /o que mais toca vocês/);
+  assert.match(whatsapp, /Evite “o que pesa mais\?”/);
+  assert.match(whatsapp, /conte a experiência destino por destino/);
+  assert.match(whatsapp, /subida opcional ao Monte Sinai/);
+  assert.match(whatsapp, /fábrica de papiros/);
+  assert.match(whatsapp, /Evite generalidades vazias/);
+  assert.match(whatsapp, /itinerário oficial completo em ordem cronológica/);
+  assert.match(whatsapp, /todas as etapas diárias, cidades, visitas e experiências/);
+  assert.match(whatsapp, /Narre o roteiro como uma jornada vivida/);
+  assert.match(whatsapp, /fale na primeira pessoa do plural/);
+  assert.match(whatsapp, /vamos embarcar.*seguiremos.*chegaremos.*conheceremos.*viveremos juntos/);
+  assert.match(whatsapp, /um representante da Viagem Perfeita acompanha todas as caravanas/);
+  assert.match(whatsapp, /Evite narrar com “vocês farão”/);
+  assert.match(whatsapp, /retome do dia seguinte, sem repetir nem pular etapas/);
+  assert.match(whatsapp, /Nunca transforme possibilidade em garantia/);
+});
+
+test("WhatsApp mostra catálogo completo sob pedido e qualifica por líder espiritual", () => {
+  assert.match(whatsapp, /todas as caravanas.*todas as opções/);
+  assert.match(whatsapp, /sem limitar a quatro/);
+  assert.match(whatsapp, /nome, mês e ano de saída/);
+  assert.match(whatsapp, /pastor ou líder espiritual específico/);
+  assert.match(whatsapp, /nunca associe o nome por suposição/);
+  assert.match(whatsapp, /priorize essa pergunta sobre pastor ou líder espiritual/);
+  assert.match(whatsapp, /vocês preferem/);
+  assert.match(whatsapp, /Qual dessas opções mais chamou a atenção de vocês/);
+  assert.match(whatsapp, /evite “prefere que eu compare\?”/);
+});
+
+test("fechamento é caloroso e coleta documentos somente por formulário seguro", () => {
+  assert.match(whatsapp, /Maravilha, \[nome\]/);
+  assert.match(whatsapp, /formulário individual para cada viajante/);
+  assert.match(whatsapp, /nome completo, data de nascimento, RG, CPF, passaporte, endereço, CEP, e-mail e telefone/);
+  assert.match(whatsapp, /Nunca peça que o cliente escreva esses dados nem envie foto do passaporte diretamente no WhatsApp/);
+  assert.match(whatsapp, /Matheus Oliveira ou Tamara Scarllat/);
+  assert.match(whatsapp, /Cliente pronto para fechar/);
+  assert.match(whatsapp, /fechamento_prioritario/);
+  assert.match(whatsapp, /sensitive_data_included: false/);
+  assert.match(whatsapp, /intenção explícita de fechamento, use handoff_to_human com prioridade alta/);
+});
