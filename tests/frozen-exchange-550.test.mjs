@@ -16,5 +16,8 @@ test("resposta financeira usa texto simples e as duas modalidades aprovadas", ()
   assert.match(whatsapp, /evite negrito, itálico e excesso de símbolos/);
   assert.match(whatsapp, /boletos mensais até um mês antes do embarque/);
   assert.match(whatsapp, /saldo restante em até 10 vezes no cartão de crédito/);
+  assert.match(whatsapp, /1ª opção: Boletos mensais/);
+  assert.match(whatsapp, /2ª opção: Boletos mensais/);
+  assert.match(whatsapp, /entrada em uma terceira modalidade/);
   assert.match(whatsapp, /acerto cambial conforme o contrato da viagem/);
 });
