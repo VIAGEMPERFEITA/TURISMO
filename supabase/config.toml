@@ -26,5 +26,8 @@ verify_jwt = true
 [functions.facebook-dispatch]
 verify_jwt = true
 
+[functions.meta-review-read-test]
+verify_jwt = true
+
 [functions.crm-vcf-import]
 verify_jwt = false
