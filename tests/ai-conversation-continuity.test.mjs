@@ -57,6 +57,11 @@ test("WhatsApp vende a experiência com imersão antes de agir como catálogo", 
   assert.match(whatsapp, /subida opcional ao Monte Sinai/);
   assert.match(whatsapp, /fábrica de papiros/);
   assert.match(whatsapp, /Evite generalidades vazias/);
+  assert.match(whatsapp, /itinerário oficial completo em ordem cronológica/);
+  assert.match(whatsapp, /todas as etapas diárias, cidades, visitas e experiências/);
+  assert.match(whatsapp, /Narre o roteiro como uma jornada vivida/);
+  assert.match(whatsapp, /retome do dia seguinte, sem repetir nem pular etapas/);
+  assert.match(whatsapp, /Nunca transforme possibilidade em garantia/);
 });
 
 test("WhatsApp mostra catálogo completo sob pedido e qualifica por líder espiritual", () => {
