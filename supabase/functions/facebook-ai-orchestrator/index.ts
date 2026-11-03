@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { humanSalesGuidelines } from "../_shared/human-sales-guidelines.ts";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -106,7 +107,7 @@ Deno.serve(async (request) => {
     const leadQuery = conversation.lead_id
       ? admin
           .from("leads")
-          .select("consent,phone,phone_normalized")
+          .select("name,consent,phone,phone_normalized")
           .eq("id", conversation.lead_id)
           .maybeSingle()
       : Promise.resolve({ data: null, error: null });
@@ -125,7 +126,7 @@ Deno.serve(async (request) => {
       admin
         .from("caravans")
         .select(
-          "name,slug,destination,departure_date,return_date,month,year,priority,status_public,available_spots,short_description,included,not_included",
+          "name,slug,destination,departure_date,return_date,month,year,priority,status_public,available_spots,short_description,included,not_included,leader_names",
         )
         .eq("organization_id", conversation.organization_id)
         .eq("published", true)
@@ -137,7 +138,7 @@ Deno.serve(async (request) => {
         .limit(12),
       leadQuery,
     ]);
-    const leadConsent = leadResult.data as { consent?: boolean } | null;
+    const leadConsent = leadResult.data as { name?: string; consent?: boolean } | null;
     const hasWhatsAppConsent = Boolean(
       conversation.consent_at || leadConsent?.consent,
     );
@@ -148,6 +149,9 @@ Deno.serve(async (request) => {
       knowledge: (knowledgeResult.data || []).slice(0, 6),
       caravans: caravansResult.data || [],
       whatsapp_consent: hasWhatsAppConsent,
+      customer_first_name: clean(leadConsent?.name, 80).split(/\s+/)[0] || null,
+      local_greeting: (() => { const hour = Number(new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", hourCycle: "h23" }).format(new Date())); return hour < 12 ? "Bom dia" : hour < 18 ? "Boa tarde" : "Boa noite"; })(),
+      first_contact: ((historyResult.data || []) as HistoryMessage[]).filter((message) => message.id !== source.id).length === 0,
     };
     const history = ((historyResult.data || []) as HistoryMessage[])
       .filter((m) => m.id !== source.id)
@@ -164,7 +168,7 @@ Deno.serve(async (request) => {
       },
       body: JSON.stringify({
         model: Deno.env.get("OPENAI_MODEL") || "gpt-5.6-sol",
-        instructions: `Você é a assistente virtual da Viagem Perfeita Turismo no Facebook Messenger. Responda em português, com naturalidade, brevidade e acolhimento. Use exclusivamente os dados oficiais do contexto. Nunca invente preços, vagas, datas, hotéis, voos, roteiros, contratos ou pagamentos. Ao listar opções para Israel, se o contexto contiver a caravana de slug paris-egito-israel-marco-2027, inclua obrigatoriamente “Paris, Egito e Israel — março de 2027” entre as opções e informe o período oficial do contexto. Encaminhe à equipe negociação, reserva, pagamento, documentos, reclamação, urgência, pedido de atendimento humano ou informação não confirmada. Nunca solicite senha, código, cartão ou documento completo pelo Messenger. Faça no máximo uma pergunta por resposta. ${consentInstruction} Contexto oficial: ${JSON.stringify(context)}`,
+        instructions: `Você é a assistente virtual da Viagem Perfeita Turismo no Facebook Messenger. Responda em português, com naturalidade, brevidade e acolhimento. Use exclusivamente os dados oficiais do contexto. Nunca invente preços, vagas, datas, hotéis, voos, roteiros, contratos ou pagamentos. Ao listar opções para Israel, se o contexto contiver a caravana de slug paris-egito-israel-marco-2027, inclua obrigatoriamente “Paris, Egito e Israel — março de 2027” entre as opções e informe o período oficial do contexto. Encaminhe à equipe negociação, reserva, pagamento, documentos, reclamação, urgência, pedido de atendimento humano ou informação não confirmada. Nunca solicite senha, código, cartão ou documento completo pelo Messenger. ${humanSalesGuidelines} ${consentInstruction} Contexto oficial: ${JSON.stringify(context)}`,
         input: [
           ...history,
           { role: "user", content: clean(source.body, 4000) },

@@ -50,6 +50,29 @@ const appendWebSources = (answer: string, sources: WebSource[], maxSources: numb
   return clean(`${answer.slice(0, Math.max(0, 4000 - block.length))}${block}`, 4000);
 };
 
+const sha256 = async (value: string) => {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, "0")).join("");
+};
+const randomToken = () => {
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  return btoa(String.fromCharCode(...bytes)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+};
+async function createSecureIntake(admin: any, conversation: any, travelerCount: number) {
+  await admin.from("secure_traveler_intakes").update({ status: "cancelado", updated_at: new Date().toISOString() })
+    .eq("conversation_id", conversation.id).eq("status", "pendente");
+  const token = randomToken();
+  const inserted = await admin.from("secure_traveler_intakes").insert({
+    organization_id: conversation.organization_id,
+    conversation_id: conversation.id,
+    lead_id: conversation.lead_id,
+    token_hash: await sha256(token),
+    traveler_count: Math.max(1, Math.min(Number(travelerCount) || 1, 12)),
+  }).select("id").single();
+  if (inserted.error) return null;
+  return `https://www.viagemperfeitaturismo.com.br/formulario-seguro/?token=${token}`;
+}
+
 const tools = [
   {
     type: "function",
@@ -88,8 +111,9 @@ const tools = [
       properties: {
         reason: { type: "string", minLength: 5, maxLength: 300 },
         priority: { type: "string", enum: ["baixa", "media", "alta"] },
+        traveler_count: { type: "integer", minimum: 1, maximum: 12 },
       },
-      required: ["reason", "priority"],
+      required: ["reason", "priority", "traveler_count"],
       additionalProperties: false,
     },
     strict: true,
@@ -159,6 +183,7 @@ Regras obrigatórias:
 - Informe que o formulário seguro solicitará nome completo, data de nascimento, RG, CPF, passaporte, endereço, CEP, e-mail e telefone com DDD. Nunca peça que o cliente escreva esses dados nem envie foto do passaporte diretamente no WhatsApp.
 - Depois de explicar o formulário, transfira o atendimento com o resumo completo para Matheus Oliveira ou Tamara Scarllat, que continuará com conferência comercial, contrato e reserva sem exigir que o cliente repita a conversa.
 - Para qualquer intenção explícita de fechamento, use handoff_to_human com prioridade alta. O alerta interno deve conter somente o resumo comercial e o identificador da conversa, nunca CPF, RG, passaporte, endereço ou foto de documento.
+- Ao usar handoff_to_human por intenção de fechamento, informe em traveler_count a quantidade de viajantes confirmada. Se ainda não estiver clara, use 1. Quando a ferramenta retornar secure_form_url, inclua esse link exatamente uma vez na resposta e explique que cada viajante deve preencher sua parte individualmente.
 - Nunca envie PIX por iniciativa própria. Só prossiga para entrada quando ai_can_request_entry=true e houver pedido explícito de reserva; mesmo assim, pagamento e comprovante exigem o processo seguro autorizado.
 - Apresente a caravana em etapas: primeiro um resumo curto; depois, conforme o interesse, roteiro, inclusões e condição comercial. Não despeje todas as informações numa única mensagem.
 - Quando o cliente pedir explicitamente “todas as caravanas”, “todas as opções” ou equivalente, apresente todas as caravanas oficiais confirmadas e disponíveis que correspondam ao ano ou filtro solicitado, sem limitar a quatro. Em cada opção, informe obrigatoriamente nome, mês e ano de saída; acrescente duração e um diferencial curto quando estiverem confirmados. Organize em blocos curtos e legíveis; se a lista for extensa, divida em mensagens ou por ano/destino sem omitir opções.
@@ -424,7 +449,7 @@ Deno.serve(async request => {
           if (result.error) throw result.error;
           toolOutput = (result.data || []).slice(0, 8).map((item: any) => ({ title: item.title, category: item.category, content: clean(item.content, 1800), source: item.source, source_url: item.source_url, version: item.version }));
         } else if (call.name === "search_public_caravans" && enabledToolNames.has(call.name)) {
-          let query = admin.from("caravans").select("id,name,slug,destination,departure_date,return_date,month,year,status_public,available_spots,duration_days,departure_city,countries,short_description,included,not_included")
+          let query = admin.from("caravans").select("id,name,slug,destination,departure_date,return_date,month,year,status_public,available_spots,duration_days,departure_city,countries,short_description,included,not_included,leader_names")
             .eq("organization_id", conversation.organization_id).eq("published", true).eq("status_internal", "confirmada").is("archived_at", null)
             .order("year", { ascending: true }).order("month", { ascending: true }).limit(8);
           if (args.destination) query = query.ilike("destination", `%${clean(args.destination, 80)}%`);
@@ -453,7 +478,13 @@ Deno.serve(async request => {
           handoff = true;
           handoffReason = clean(args.reason, 300);
           handoffPriority = args.priority || "media";
-          toolOutput = { registered: true, next_step: "A equipe humana continuará o atendimento nesta conversa." };
+          const secureFormUrl = handoffPriority === "alta" ? await createSecureIntake(admin, conversation, Number(args.traveler_count)) : null;
+          toolOutput = {
+            registered: true,
+            next_step: "A equipe humana continuará o atendimento nesta conversa.",
+            secure_form_url: secureFormUrl,
+            secure_form_instruction: secureFormUrl ? "Envie este link ao cliente exatamente uma vez. Não peça dados pessoais no chat." : null,
+          };
         }
         input.push({ type: "function_call_output", call_id: call.call_id, output: JSON.stringify(toolOutput) });
       }

@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { humanSalesGuidelines } from "../_shared/human-sales-guidelines.ts";
 
 const allowedOrigins = new Set([
   "https://viagemperfeita.github.io",
@@ -102,7 +103,8 @@ Regras obrigatórias:
 - Se um atendente humano assumiu a conversa, não responda até que ela seja devolvida explicitamente à IA.
 - Quando não houver fonte suficiente, diga isso claramente e ofereça atendimento humano.
 - Se houver várias opções oficiais compatíveis, apresente de duas a no máximo quatro, de modo comparável, e peça uma escolha antes de aprofundar. Envie apenas PDFs e links aprovados da Viagem Perfeita e não repita perguntas já respondidas.
-- Termine com uma única próxima ação curta e útil. Não pressione o visitante e não use urgência artificial.`;
+- Termine com uma única próxima ação curta e útil. Não pressione o visitante e não use urgência artificial.
+${humanSalesGuidelines}`;
 
 const json = (body: unknown, status = 200, headers: HeadersInit = {}) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json", ...headers } });
 const clean = (value: unknown, max = 1000) => typeof value === "string" ? value.trim().slice(0, max) : "";
@@ -276,7 +278,7 @@ Deno.serve(async request => {
             for (const item of (toolOutput as KnowledgeResult[])) usedSources.push({ type: "knowledge", title: clean(item.title, 200), url: clean(item.source_url, 500) || undefined, version: clean(item.version, 40) || undefined });
             success = true;
           } else if (call.name === "search_public_caravans" && enabledToolNames.has(call.name)) {
-            let query = admin.from("caravans").select("id,name,slug,destination,departure_date,return_date,month,year,status_public,available_spots,duration_days,departure_city,countries,short_description,included,not_included").eq("organization_id", organizationId).eq("published", true).eq("status_internal", "confirmada").is("archived_at", null).order("year", { ascending: true }).order("month", { ascending: true }).limit(12);
+            let query = admin.from("caravans").select("id,name,slug,destination,departure_date,return_date,month,year,status_public,available_spots,duration_days,departure_city,countries,short_description,included,not_included,leader_names").eq("organization_id", organizationId).eq("published", true).eq("status_internal", "confirmada").is("archived_at", null).order("year", { ascending: true }).order("month", { ascending: true }).limit(12);
             if (args.destination) query = query.ilike("destination", `%${clean(args.destination, 80)}%`);
             if (args.month) query = query.eq("month", Number(args.month));
             if (args.year) query = query.eq("year", Number(args.year));
