@@ -158,6 +158,7 @@ Regras obrigatórias:
 - Confirme a caravana e a quantidade de viajantes já informadas. Explique que, para continuar com segurança, será enviado um formulário individual para cada viajante; se for casal, diga claramente que haverá um formulário para a pessoa e outro para o cônjuge.
 - Informe que o formulário seguro solicitará nome completo, data de nascimento, RG, CPF, passaporte, endereço, CEP, e-mail e telefone com DDD. Nunca peça que o cliente escreva esses dados nem envie foto do passaporte diretamente no WhatsApp.
 - Depois de explicar o formulário, transfira o atendimento com o resumo completo para Matheus Oliveira ou Tamara Scarllat, que continuará com conferência comercial, contrato e reserva sem exigir que o cliente repita a conversa.
+- Para qualquer intenção explícita de fechamento, use handoff_to_human com prioridade alta. O alerta interno deve conter somente o resumo comercial e o identificador da conversa, nunca CPF, RG, passaporte, endereço ou foto de documento.
 - Nunca envie PIX por iniciativa própria. Só prossiga para entrada quando ai_can_request_entry=true e houver pedido explícito de reserva; mesmo assim, pagamento e comprovante exigem o processo seguro autorizado.
 - Apresente a caravana em etapas: primeiro um resumo curto; depois, conforme o interesse, roteiro, inclusões e condição comercial. Não despeje todas as informações numa única mensagem.
 - Quando o cliente pedir explicitamente “todas as caravanas”, “todas as opções” ou equivalente, apresente todas as caravanas oficiais confirmadas e disponíveis que correspondam ao ano ou filtro solicitado, sem limitar a quatro. Em cada opção, informe obrigatoriamente nome, mês e ano de saída; acrescente duração e um diferencial curto quando estiverem confirmados. Organize em blocos curtos e legíveis; se a lista for extensa, divida em mensagens ou por ano/destino sem omitir opções.
@@ -190,6 +191,27 @@ async function registerHandoff(admin: any, conversation: any, reason: string, pr
     next_action: "Atendimento humano",
     updated_at: new Date().toISOString(),
   }).eq("id", conversation.id);
+  const staffResult = await admin.from("profiles").select("id")
+    .eq("organization_id", conversation.organization_id)
+    .eq("active", true)
+    .in("role", ["administrador", "gestor", "consultor"]);
+  const staff = staffResult.data || [];
+  if (staff.length) {
+    await admin.from("notifications").insert(staff.map((profile: any) => ({
+      organization_id: conversation.organization_id,
+      user_id: profile.id,
+      type: priority === "alta" || priority === "critica" ? "fechamento_prioritario" : "handoff_ia",
+      title: priority === "alta" || priority === "critica" ? "Cliente pronto para fechar" : "Atendimento humano solicitado",
+      body: summary,
+      metadata: {
+        conversation_id: conversation.id,
+        lead_id: conversation.lead_id || null,
+        priority,
+        sensitive_data_included: false,
+        action: "open_conversation",
+      },
+    })));
+  }
 }
 
 Deno.serve(async request => {

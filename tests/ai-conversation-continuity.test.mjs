@@ -86,4 +86,8 @@ test("fechamento é caloroso e coleta documentos somente por formulário seguro"
   assert.match(whatsapp, /nome completo, data de nascimento, RG, CPF, passaporte, endereço, CEP, e-mail e telefone/);
   assert.match(whatsapp, /Nunca peça que o cliente escreva esses dados nem envie foto do passaporte diretamente no WhatsApp/);
   assert.match(whatsapp, /Matheus Oliveira ou Tamara Scarllat/);
+  assert.match(whatsapp, /Cliente pronto para fechar/);
+  assert.match(whatsapp, /fechamento_prioritario/);
+  assert.match(whatsapp, /sensitive_data_included: false/);
+  assert.match(whatsapp, /intenção explícita de fechamento, use handoff_to_human com prioridade alta/);
 });
