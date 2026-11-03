@@ -53,6 +53,10 @@ test("WhatsApp vende a experiência com imersão antes de agir como catálogo", 
   assert.match(whatsapp, /pedido explícito de comparação/);
   assert.match(whatsapp, /o que mais toca vocês/);
   assert.match(whatsapp, /Evite “o que pesa mais\?”/);
+  assert.match(whatsapp, /conte a experiência destino por destino/);
+  assert.match(whatsapp, /subida opcional ao Monte Sinai/);
+  assert.match(whatsapp, /fábrica de papiros/);
+  assert.match(whatsapp, /Evite generalidades vazias/);
 });
 
 test("WhatsApp mostra catálogo completo sob pedido e qualifica por líder espiritual", () => {
