@@ -60,6 +60,10 @@ test("WhatsApp vende a experiência com imersão antes de agir como catálogo", 
   assert.match(whatsapp, /itinerário oficial completo em ordem cronológica/);
   assert.match(whatsapp, /todas as etapas diárias, cidades, visitas e experiências/);
   assert.match(whatsapp, /Narre o roteiro como uma jornada vivida/);
+  assert.match(whatsapp, /fale na primeira pessoa do plural/);
+  assert.match(whatsapp, /vamos embarcar.*seguiremos.*chegaremos.*conheceremos.*viveremos juntos/);
+  assert.match(whatsapp, /um representante da Viagem Perfeita acompanha todas as caravanas/);
+  assert.match(whatsapp, /Evite narrar com “vocês farão”/);
   assert.match(whatsapp, /retome do dia seguinte, sem repetir nem pular etapas/);
   assert.match(whatsapp, /Nunca transforme possibilidade em garantia/);
 });
