@@ -79,3 +79,11 @@ test("WhatsApp mostra catálogo completo sob pedido e qualifica por líder espir
   assert.match(whatsapp, /Qual dessas opções mais chamou a atenção de vocês/);
   assert.match(whatsapp, /evite “prefere que eu compare\?”/);
 });
+
+test("fechamento é caloroso e coleta documentos somente por formulário seguro", () => {
+  assert.match(whatsapp, /Maravilha, \[nome\]/);
+  assert.match(whatsapp, /formulário individual para cada viajante/);
+  assert.match(whatsapp, /nome completo, data de nascimento, RG, CPF, passaporte, endereço, CEP, e-mail e telefone/);
+  assert.match(whatsapp, /Nunca peça que o cliente escreva esses dados nem envie foto do passaporte diretamente no WhatsApp/);
+  assert.match(whatsapp, /Matheus Oliveira ou Tamara Scarllat/);
+});
