@@ -59,4 +59,6 @@ test("WhatsApp mostra catálogo completo sob pedido e qualifica por líder espir
   assert.match(whatsapp, /nome, mês e ano de saída/);
   assert.match(whatsapp, /pastor ou líder espiritual específico/);
   assert.match(whatsapp, /nunca associe o nome por suposição/);
+  assert.match(whatsapp, /priorize essa pergunta sobre pastor ou líder espiritual/);
+  assert.match(whatsapp, /vocês preferem/);
 });
