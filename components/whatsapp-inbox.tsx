@@ -14,6 +14,8 @@ import {
   Tag,
   UserRoundCheck,
   Users,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import { getSupabaseBrowserClient } from "../lib/supabase-client";
 type Conversation = {
@@ -93,6 +95,9 @@ const slaMinutes = (value: string | null) =>
 export function WhatsAppInbox() {
   const activeMessagesRequest = useRef<string | null>(null);
   const messagesViewport = useRef<HTMLDivElement | null>(null);
+  const notificationAudioContext = useRef<AudioContext | null>(null);
+  const incomingAlertTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const soundEnabledRef = useRef(true);
   const [conversations, setConversations] = useState<Conversation[]>([]),
     [messages, setMessages] = useState<Message[]>([]),
     [profiles, setProfiles] = useState<Profile[]>([]),
@@ -104,10 +109,47 @@ export function WhatsAppInbox() {
     [draft, setDraft] = useState(""),
     [noteDraft, setNoteDraft] = useState(""),
     [notice, setNotice] = useState(""),
+    [incomingAlert, setIncomingAlert] = useState(""),
+    [soundEnabled, setSoundEnabled] = useState(true),
     [loading, setLoading] = useState(true),
     [actionPending, setActionPending] = useState<string | null>(null),
     [sending, setSending] = useState(false),
     [savingNote, setSavingNote] = useState(false);
+  const ensureNotificationAudio = useCallback(async () => {
+    if (typeof window === "undefined") return null;
+    const AudioContextClass = window.AudioContext;
+    if (!AudioContextClass) return null;
+    const context =
+      notificationAudioContext.current || new AudioContextClass();
+    notificationAudioContext.current = context;
+    if (context.state === "suspended") await context.resume().catch(() => {});
+    return context;
+  }, []);
+  const playNotificationSound = useCallback(async () => {
+    if (!soundEnabledRef.current) return;
+    const context = await ensureNotificationAudio();
+    if (!context || context.state !== "running") return;
+    const now = context.currentTime;
+    [0, 0.16].forEach((delay, index) => {
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      oscillator.type = "sine";
+      oscillator.frequency.setValueAtTime(index ? 880 : 660, now + delay);
+      gain.gain.setValueAtTime(0.0001, now + delay);
+      gain.gain.exponentialRampToValueAtTime(0.16, now + delay + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + delay + 0.13);
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      oscillator.start(now + delay);
+      oscillator.stop(now + delay + 0.14);
+    });
+  }, [ensureNotificationAudio]);
+  const announceIncomingMessage = useCallback(() => {
+    setIncomingAlert("Nova mensagem recebida.");
+    if (incomingAlertTimer.current) clearTimeout(incomingAlertTimer.current);
+    incomingAlertTimer.current = setTimeout(() => setIncomingAlert(""), 5000);
+    void playNotificationSound();
+  }, [playNotificationSound]);
   const selected = conversations.find((item) => item.id === selectedId) || null;
   const loadConversations = useCallback(async () => {
     const client = getSupabaseBrowserClient();
@@ -171,6 +213,23 @@ export function WhatsAppInbox() {
       .limit(20);
     setNotes((data || []) as unknown as LeadNote[]);
   }, []);
+  useEffect(() => {
+    const storedPreference = window.localStorage.getItem("vp-inbox-sound");
+    const enabled = storedPreference !== "off";
+    soundEnabledRef.current = enabled;
+    setSoundEnabled(enabled);
+    const unlockAudio = () => {
+      if (soundEnabledRef.current) void ensureNotificationAudio();
+    };
+    window.addEventListener("pointerdown", unlockAudio, { once: true });
+    window.addEventListener("keydown", unlockAudio, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", unlockAudio);
+      window.removeEventListener("keydown", unlockAudio);
+      if (incomingAlertTimer.current) clearTimeout(incomingAlertTimer.current);
+      notificationAudioContext.current?.close().catch(() => {});
+    };
+  }, [ensureNotificationAudio]);
   useEffect(() => {
     const client = getSupabaseBrowserClient();
     if (!client) return;
@@ -239,7 +298,13 @@ export function WhatsAppInbox() {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "messages" },
         (payload) => {
-          const row = payload.new as { conversation_id?: string };
+          const row = payload.new as {
+            conversation_id?: string;
+            direction?: string;
+            author_type?: string;
+          };
+          if (row.direction === "entrada" || row.author_type === "cliente")
+            announceIncomingMessage();
           if (row.conversation_id === selectedId && selectedId)
             loadMessages(selectedId);
           loadConversations();
@@ -249,7 +314,17 @@ export function WhatsAppInbox() {
     return () => {
       client.removeChannel(channel);
     };
-  }, [loadConversations, loadMessages, selectedId]);
+  }, [announceIncomingMessage, loadConversations, loadMessages, selectedId]);
+  async function toggleSound() {
+    const enabled = !soundEnabled;
+    soundEnabledRef.current = enabled;
+    setSoundEnabled(enabled);
+    window.localStorage.setItem("vp-inbox-sound", enabled ? "on" : "off");
+    if (enabled) {
+      await ensureNotificationAudio();
+      await playNotificationSound();
+    }
+  }
   const filtered = useMemo(
     () =>
       conversations.filter(
@@ -398,10 +473,25 @@ export function WhatsAppInbox() {
             <small>ATENDIMENTO OMNICHANNEL</small>
             <h2>Conversas</h2>
           </div>
-          <button onClick={loadConversations} aria-label="Atualizar">
-            <RefreshCw />
-          </button>
+          <div className="wa-header-actions">
+            <button
+              onClick={toggleSound}
+              aria-label={soundEnabled ? "Silenciar alertas" : "Ativar alertas sonoros"}
+              title={soundEnabled ? "Alertas sonoros ativados" : "Alertas sonoros silenciados"}
+            >
+              {soundEnabled ? <Volume2 /> : <VolumeX />}
+            </button>
+            <button onClick={loadConversations} aria-label="Atualizar">
+              <RefreshCw />
+            </button>
+          </div>
         </header>
+        {incomingAlert ? (
+          <div className="wa-incoming-alert" role="status" aria-live="assertive">
+            <MessageCircle />
+            {incomingAlert}
+          </div>
+        ) : null}
         <div className="campaign-rates">
           <span>
             Total <b>{stats.total}</b>

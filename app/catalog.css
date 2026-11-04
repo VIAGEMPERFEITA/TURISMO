@@ -463,6 +463,9 @@ footer .footer-grid { grid-template-columns: 1.25fr repeat(4,1fr); }
 .wa-list header small { color: #9a7349; font-size: 9px; font-weight: 800; letter-spacing: .16em; }
 .wa-list header button { display: grid; width: 34px; height: 34px; place-items: center; border: 1px solid #d8e1dc; border-radius: 50%; color: #31564b; background: #fff; cursor: pointer; }
 .wa-list header button svg,.wa-search svg { width: 15px; }
+.wa-header-actions { display:flex; align-items:center; gap:7px; }
+.wa-incoming-alert { display:flex; align-items:center; gap:8px; margin:10px 12px 0; padding:10px 12px; color:#17453a; background:#e2f3e9; border:1px solid #b9deca; border-radius:8px; font-size:10px; font-weight:800; }
+.wa-incoming-alert svg { width:15px; flex:0 0 auto; }
 .wa-search { display: flex; align-items: center; gap: 9px; margin: 12px; padding: 0 12px; color: #7b8983; background: #fff; border: 1px solid #dfe6e2; border-radius: 8px; }
 .wa-search input { width: 100%; min-width: 0; height: 40px; border: 0; outline: 0; background: transparent; }
 .wa-conversation-list { flex: 1; min-height: 284px; overflow-y: auto; overscroll-behavior:contain; scrollbar-gutter:stable; touch-action:pan-y; padding: 0 8px 12px; }
