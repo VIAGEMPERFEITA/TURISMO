@@ -92,6 +92,7 @@ const slaMinutes = (value: string | null) =>
     : 0;
 export function WhatsAppInbox() {
   const activeMessagesRequest = useRef<string | null>(null);
+  const messagesViewport = useRef<HTMLDivElement | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]),
     [messages, setMessages] = useState<Message[]>([]),
     [profiles, setProfiles] = useState<Profile[]>([]),
@@ -104,6 +105,7 @@ export function WhatsAppInbox() {
     [noteDraft, setNoteDraft] = useState(""),
     [notice, setNotice] = useState(""),
     [loading, setLoading] = useState(true),
+    [actionPending, setActionPending] = useState<string | null>(null),
     [sending, setSending] = useState(false),
     [savingNote, setSavingNote] = useState(false);
   const selected = conversations.find((item) => item.id === selectedId) || null;
@@ -217,6 +219,13 @@ export function WhatsAppInbox() {
     else setNotes([]);
   }, [selected?.lead?.id, loadNotes]);
   useEffect(() => {
+    const viewport = messagesViewport.current;
+    if (!viewport || !messages.length) return;
+    requestAnimationFrame(() => {
+      viewport.scrollTop = viewport.scrollHeight;
+    });
+  }, [selectedId, messages.length]);
+  useEffect(() => {
     const client = getSupabaseBrowserClient();
     if (!client) return;
     const channel = client
@@ -306,7 +315,8 @@ export function WhatsAppInbox() {
   ];
   async function rpc(name: string, args: Record<string, unknown>) {
     const client = getSupabaseBrowserClient();
-    if (!client) return;
+    if (!client || actionPending) return;
+    setActionPending(name);
     setNotice("");
     const { error } = await client.rpc(name, args);
     setNotice(
@@ -314,6 +324,7 @@ export function WhatsAppInbox() {
     );
     await loadConversations();
     if (selectedId) await loadMessages(selectedId);
+    setActionPending(null);
   }
   async function send() {
     const client = getSupabaseBrowserClient(),
@@ -505,8 +516,9 @@ export function WhatsAppInbox() {
                     : "Em espera"}
               </span>
             </header>
-            <div className="wa-actions">
+            <div className="wa-actions" aria-busy={Boolean(actionPending)}>
               <button
+                disabled={Boolean(actionPending)}
                 onClick={() =>
                   rpc("claim_conversation", {
                     target_conversation_id: selected.id,
@@ -514,7 +526,7 @@ export function WhatsAppInbox() {
                 }
               >
                 <UserRoundCheck />
-                Assumir
+                {actionPending === "claim_conversation" ? "Assumindo…" : "Assumir"}
               </button>
               <label>
                 <Users />
@@ -553,7 +565,7 @@ export function WhatsAppInbox() {
                 Devolver à IA
               </button>
             </div>
-            <div className="wa-messages">
+            <div className="wa-messages" ref={messagesViewport} tabIndex={0}>
               {messages.map((message) => (
                 <article
                   className={`${message.direction} ${message.author_type}`}
