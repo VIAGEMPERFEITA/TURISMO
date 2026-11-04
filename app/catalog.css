@@ -455,7 +455,8 @@ footer .footer-grid { grid-template-columns: 1.25fr repeat(4,1fr); }
 /* Caixa compartilhada de atendimento WhatsApp. */
 .wa-inbox { display: grid; grid-template-columns: 320px minmax(0,1fr) 260px; height: max(620px,calc(100dvh - 156px)); max-height: 820px; overflow: hidden; background: #fff; border: 1px solid #dfe6e2; border-radius: 12px; box-shadow: 0 12px 36px rgba(18,57,47,.08); }
 .wa-inbox button,.wa-inbox select,.wa-inbox textarea,.wa-inbox input { font: inherit; }
-.wa-list,.wa-details { min-width: 0; background: #f7f9f7; }
+.wa-list,.wa-thread,.wa-details { min-width: 0; min-height: 0; }
+.wa-list,.wa-details { background: #f7f9f7; }
 .wa-list { display: flex; flex-direction: column; border-right: 1px solid #dfe6e2; }
 .wa-list > header,.wa-thread > header { display: flex; align-items: center; justify-content: space-between; min-height: 74px; padding: 16px 18px; border-bottom: 1px solid #dfe6e2; }
 .wa-list h2 { margin: 2px 0 0; color: #173d33; font: 25px Georgia,serif; }
