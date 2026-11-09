@@ -21,7 +21,7 @@ type ImportIssue={id:string;name:string;raw_phone:string|null;issue_type:string;
 type FollowupPolicy={enabled:boolean;simulation_mode:boolean;first_delay_hours:number;interval_hours:number;max_attempts:number;business_hour_start:number;business_hour_end:number;template_id:string|null};
 type FollowupPreview=FollowupPolicy&{eligible_count:number;template_ready:boolean;contacts:Array<{conversation_id:string;lead_id:string;name:string;phone_e164:string;last_message_at:string;attempts:number}>};
 const zero:Metrics={total:0,drafts:0,scheduled:0,running:0,completed:0,sent:0,delivered:0,read_count:0,replied:0,failed:0,opted_out:0};
-const defaultFollowup:FollowupPolicy={enabled:false,simulation_mode:true,first_delay_hours:48,interval_hours:72,max_attempts:3,business_hour_start:9,business_hour_end:18,template_id:null};
+const defaultFollowup:FollowupPolicy={enabled:false,simulation_mode:true,first_delay_hours:48,interval_hours:72,max_attempts:3,business_hour_start:8,business_hour_end:22,template_id:null};
 const tabs:Array<[Tab,string]>=[["visao-geral","Visão geral"],["base","Base e consentimento"],["retomadas","Retomadas"],["nova","Nova campanha"],["agendadas","Agendadas"],["historico","Histórico"],["modelos","Modelos"],["supressoes","Supressões"],["integracao","Integração"]];
 
 export function AdminCampaigns(){
