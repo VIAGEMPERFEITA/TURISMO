@@ -46,11 +46,12 @@ Deno.serve(async (request) => {
     const accountId = clean(instagram.settings?.graph_account_id || instagram.external_account_id, 180);
     if (token && accountId) {
       const mediaUrl = new URL(`https://graph.instagram.com/v25.0/${encodeURIComponent(accountId)}/media`);
-      mediaUrl.searchParams.set("fields", "id");
+      mediaUrl.searchParams.set("fields", "id,permalink");
       mediaUrl.searchParams.set("limit", "1");
       const mediaResponse = await fetch(mediaUrl, { headers: { Authorization: `Bearer ${token}` } });
       const mediaBody = await mediaResponse.json().catch(() => ({}));
       const mediaId = clean(mediaBody?.data?.[0]?.id, 180);
+      const mediaPermalink = clean(mediaBody?.data?.[0]?.permalink, 1024);
       let commentsStatus: number | null = null;
       let commentsCount = 0;
       if (mediaResponse.ok && mediaId) {
@@ -66,6 +67,7 @@ Deno.serve(async (request) => {
         account: instagram.settings?.username || "viagemperfeitatrip",
         mediaStatus: mediaResponse.status,
         mediaFound: Boolean(mediaId),
+        mediaPermalink: mediaPermalink || null,
         commentsStatus,
         commentsCount,
         permissionCallCompleted: mediaResponse.ok && commentsStatus === 200,
