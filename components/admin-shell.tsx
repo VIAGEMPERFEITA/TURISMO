@@ -10,7 +10,7 @@ import {
   MessageCircle, Plug, Rocket, ScrollText, Search, Settings, Users,
   UserRoundCheck, Workflow, X,
 } from "lucide-react";
-import { canAccessModule, getAuthenticatedCrmUser, moduleFromPath, roleLabel, type CrmProfile } from "../lib/crm-auth";
+import { canAccessModule, getAuthenticatedCrmUser, moduleFromPath, roleLabel, type CrmOrganization, type CrmProfile } from "../lib/crm-auth";
 import { clearSupabaseBrowserClient, getSupabaseBrowserClient } from "../lib/supabase-client";
 
 type NavItem = readonly [React.ComponentType<{ className?: string }>, string, string, string];
@@ -67,6 +67,7 @@ export function AdminShell({ children, title }: { children: ReactNode; title: st
   const [menu, setMenu] = useState(false);
   const [query, setQuery] = useState("");
   const [profile, setProfile] = useState<CrmProfile | null>(null);
+  const [organization, setOrganization] = useState<CrmOrganization | null>(null);
   const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
   const pathname = usePathname();
   const currentModule = moduleFromPath(pathname);
@@ -82,6 +83,7 @@ export function AdminShell({ children, title }: { children: ReactNode; title: st
       if (!active) return;
       if (!user) { window.location.replace(`${base}/admin/login/`); return; }
       setProfile(user.profile);
+      setOrganization(user.organization);
       setReady(true);
     });
     const { data } = client.auth.onAuthStateChange(event => {
@@ -112,11 +114,12 @@ export function AdminShell({ children, title }: { children: ReactNode; title: st
   if (!profile) return <main className="admin-loading">Redirecionando para o login…</main>;
   if (!canAccessModule(profile.role, currentModule)) return <main className="admin-access-denied"><div><h1>Acesso restrito</h1><p>O perfil {roleLabel(profile.role)} não possui permissão para este módulo.</p><Link href="/admin/dashboard">Voltar ao dashboard</Link><button onClick={logout}><LogOut />Sair com segurança</button></div></main>;
 
-  const initials = profile.full_name.split(" ").filter(Boolean).slice(0, 2).map(part => part[0]).join("").toUpperCase() || "VP";
+  const initials = profile.full_name.split(" ").filter(Boolean).slice(0, 2).map(part => part[0]).join("").toUpperCase() || "YO";
+  const organizationMark = organization?.name.split(" ").filter(Boolean).slice(0, 2).map(part => part[0]).join("").toUpperCase() || "YO";
 
   return <div className="crm">
     <aside className={menu ? "open" : ""} aria-label="Navegação administrativa">
-      <div className="crm-brand"><span className="crm-brand-mark">VP</span><div><strong>CRM YOAV</strong><small>Viagem Perfeita</small></div></div>
+      <div className="crm-brand"><span className="crm-brand-mark">{organizationMark}</span><div><strong>CRM YOAV</strong><small>{organization?.name ?? "Empresa"}</small></div></div>
       <label className="crm-nav-search"><Search /><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Buscar módulo" aria-label="Buscar módulo" /></label>
       <nav>
         {visibleGroups.map(group => <section className="crm-nav-group" key={group.label}>

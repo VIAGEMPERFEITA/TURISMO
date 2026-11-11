@@ -12,7 +12,18 @@ export type CrmProfile = {
   active: boolean;
 };
 
-export type AuthenticatedCrmUser = { session: Session; profile: CrmProfile };
+export type CrmOrganization = {
+  id: string;
+  name: string;
+  slug: string;
+  active: boolean;
+};
+
+export type AuthenticatedCrmUser = {
+  session: Session;
+  profile: CrmProfile;
+  organization: CrmOrganization;
+};
 
 const roleLabels: Record<CrmRole, string> = {
   administrador: "Administrador",
@@ -83,5 +94,14 @@ export async function getAuthenticatedCrmUser(client: SupabaseClient): Promise<A
     await client.auth.signOut();
     return null;
   }
-  return { session: sessionData.session, profile };
+  const { data: organization, error: organizationError } = await client
+    .from("organizations")
+    .select("id,name,slug,active")
+    .eq("id", profile.organization_id)
+    .single<CrmOrganization>();
+  if (organizationError || !organization?.active) {
+    await client.auth.signOut();
+    return null;
+  }
+  return { session: sessionData.session, profile, organization };
 }

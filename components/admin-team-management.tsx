@@ -66,20 +66,24 @@ export function AdminTeamManagement() {
     if (!client) return;
     const values = new FormData(form);
     setBusy(true); setMessage("");
-    const { error } = await client.rpc("create_tenant_organization", {
-      tenant_name: String(values.get("name") ?? ""),
-      tenant_slug: String(values.get("slug") ?? ""),
-      administrator_email: String(values.get("administrator_email") ?? ""),
-      tenant_legal_name: String(values.get("legal_name") ?? ""),
-      tenant_tax_id: String(values.get("tax_id") ?? ""),
-      tenant_phone: String(values.get("phone") ?? ""),
-      tenant_city: String(values.get("city") ?? ""),
-      tenant_state: String(values.get("state") ?? ""),
+    const { data, error } = await client.functions.invoke("create-tenant-organization", {
+      body: {
+        name: String(values.get("name") ?? ""),
+        slug: String(values.get("slug") ?? ""),
+        administratorEmail: String(values.get("administrator_email") ?? ""),
+        legalName: String(values.get("legal_name") ?? ""),
+        taxId: String(values.get("tax_id") ?? ""),
+        phone: String(values.get("phone") ?? ""),
+        city: String(values.get("city") ?? ""),
+        state: String(values.get("state") ?? ""),
+      },
     });
     setBusy(false);
     if (error) { setMessage(error.message); return; }
     form.reset();
-    setMessage("Empresa criada com pipeline, fila e convite do administrador.");
+    setMessage(data?.linkedExistingUser
+      ? "Empresa criada e vinculada ao administrador existente."
+      : "Empresa criada com pipeline e fila. O convite de acesso foi enviado ao administrador.");
     await load();
   }
 
