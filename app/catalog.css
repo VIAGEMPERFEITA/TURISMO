@@ -630,6 +630,22 @@ footer .footer-grid { grid-template-columns: 1.25fr repeat(4,1fr); }
 .crm-panel { border:1px solid #e1e9ed; border-radius:14px; box-shadow:0 8px 28px rgba(15,52,76,.045); }
 .crm-panel h2 { color:var(--crm-ink); }
 .crm-panel p { color:var(--crm-muted); }
+.tenant-company-panel { grid-column:1/-1; }
+.tenant-form { display:grid; gap:20px; margin-top:24px; }
+.tenant-form-section { padding:22px; border:1px solid var(--crm-line); border-radius:14px; background:#f8fafb; }
+.tenant-form-section h3 { margin:0 0 16px; color:var(--crm-ink); font-size:15px; }
+.tenant-form-section > p { margin:-9px 0 16px; }
+.tenant-form-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+.tenant-form label { display:grid; align-content:start; gap:7px; color:var(--crm-ink); font-size:10px; font-weight:700; }
+.tenant-form label.wide { grid-column:1/-1; }
+.tenant-form input { width:100%; min-width:0; height:44px; padding:0 12px; border:1px solid #ccd9df; border-radius:9px; color:var(--crm-ink); background:#fff; outline:none; }
+.tenant-form input:focus { border-color:var(--crm-blue); box-shadow:0 0 0 3px rgba(21,95,141,.1); }
+.tenant-form label small { color:var(--crm-muted); font-size:8px; font-weight:400; line-height:1.45; }
+.tenant-form-actions { display:flex; align-items:center; justify-content:space-between; gap:20px; }
+.tenant-form-actions > span { color:var(--crm-muted); font-size:10px; }
+.tenant-form-actions button { display:flex; align-items:center; justify-content:center; gap:8px; min-width:190px; padding:13px 18px; border:0; border-radius:9px; color:#fff; background:var(--crm-blue); cursor:pointer; }
+.tenant-form-actions button:disabled { opacity:.6; cursor:wait; }
+.tenant-form-actions svg { width:17px; }
 .performance-overview { display:grid; gap:24px; padding:28px; }
 .sla-strip { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); overflow:hidden; border:1px solid var(--crm-line); border-radius:12px; background:#f8fafb; }
 .sla-strip > span { display:grid; grid-template-columns:28px 1fr; gap:2px 8px; align-items:center; padding:17px; border-right:1px solid var(--crm-line); }
@@ -668,6 +684,10 @@ footer .footer-grid { grid-template-columns: 1.25fr repeat(4,1fr); }
   .sla-strip > span:nth-child(1),.sla-strip > span:nth-child(2) { border-top:0; }
   .sla-strip > span:nth-child(even) { border-right:0; }
   .admin-login { background:linear-gradient(180deg,#061f33 0 28%,#f3f6f8 28% 100%); }
+  .tenant-form-grid { grid-template-columns:1fr; }
+  .tenant-form label.wide { grid-column:auto; }
+  .tenant-form-actions { align-items:stretch; flex-direction:column; }
+  .tenant-form-actions button { width:100%; }
 }
 @media (max-width:480px) {
   .crm-metrics { grid-template-columns:1fr; }

@@ -6,6 +6,7 @@ const auth = readFileSync("lib/crm-auth.ts", "utf8");
 const shell = readFileSync("components/admin-shell.tsx", "utf8");
 const team = readFileSync("components/admin-team-management.tsx", "utf8");
 const tenantFunction = readFileSync("supabase/functions/create-tenant-organization/index.ts", "utf8");
+const styles = readFileSync("app/catalog.css", "utf8");
 
 test("sessão valida também a empresa ativa do usuário", () => {
   assert.match(auth, /from\("organizations"\)/);
@@ -24,4 +25,10 @@ test("cadastro de empresa usa função segura e envia convite inicial", () => {
   assert.match(tenantFunction, /create_tenant_organization/);
   assert.match(tenantFunction, /inviteUserByEmail/);
   assert.match(tenantFunction, /admin\/redefinir-senha/);
+});
+
+test("formulário multiempresa é organizado e separa site do identificador interno", () => {
+  assert.match(team, /Não coloque o endereço do site/);
+  assert.match(team, /tenant-form-grid/);
+  assert.match(styles, /\.tenant-form-grid\s*\{/);
 });

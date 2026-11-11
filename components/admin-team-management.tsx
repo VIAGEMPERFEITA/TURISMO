@@ -9,6 +9,9 @@ type Member = { id: string; full_name: string; email: string; role: string; acti
 type Invitation = { id: string; email: string; role: string; expires_at: string; accepted_at: string | null };
 type Organization = { id: string; name: string; slug: string; active: boolean };
 
+const slugify = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+  .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+
 export function AdminTeamManagement() {
   const [members, setMembers] = useState<Member[]>([]);
   const [invitations, setInvitations] = useState<Invitation[]>([]);
@@ -103,16 +106,31 @@ export function AdminTeamManagement() {
       </form>
       {invitations.length?<div className="crm-table-wrap"><table className="crm-table"><thead><tr><th>E-mail</th><th>Função</th><th>Situação</th></tr></thead><tbody>{invitations.map(item=><tr key={item.id}><td>{item.email}</td><td>{item.role}</td><td>{item.accepted_at?"Aceito":new Date(item.expires_at)<new Date()?"Expirado":"Pendente"}</td></tr>)}</tbody></table></div>:null}
     </section>
-    {platformAdmin?<section className="crm-panel">
+    {platformAdmin?<section className="crm-panel tenant-company-panel">
       <div className="crm-panel-head"><div><h2>Nova empresa na plataforma</h2><p>Provisiona ambiente isolado, pipeline, fila e administrador inicial.</p></div><Building2/></div>
-      <form className="crm-form" onSubmit={createTenant}>
-        <label>Nome da empresa<input name="name" required maxLength={120}/></label>
-        <label>Identificador na URL<input name="slug" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="empresa-exemplo"/></label>
-        <label>E-mail do administrador<input name="administrator_email" type="email" required/></label>
-        <label>Razão social<input name="legal_name"/></label><label>CNPJ<input name="tax_id"/></label>
-        <label>Telefone<input name="phone" type="tel"/></label><label>Cidade<input name="city"/></label>
-        <label>UF<input name="state" maxLength={2}/></label>
-        <button className="crm-primary" disabled={busy}>{busy?<LoaderCircle className="spin"/>:<Building2/>}Cadastrar empresa</button>
+      <form className="crm-form tenant-form" onSubmit={createTenant}>
+        <div className="tenant-form-section">
+          <h3>Identificação da empresa</h3>
+          <div className="tenant-form-grid">
+            <label>Nome da empresa<input name="name" required maxLength={120} placeholder="Nome usado no painel" onBlur={event=>{const slug=event.currentTarget.form?.elements.namedItem("slug") as HTMLInputElement|null;if(slug&&!slug.value)slug.value=slugify(event.currentTarget.value)}}/></label>
+            <label>Identificador interno<input name="slug" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="rede-asas"/><small>Use apenas letras minúsculas, números e hífen. Não coloque o endereço do site.</small></label>
+            <label className="wide">Razão social<input name="legal_name" placeholder="Razão social completa"/></label>
+            <label>CNPJ<input name="tax_id" inputMode="numeric" placeholder="00.000.000/0000-00"/></label>
+          </div>
+        </div>
+        <div className="tenant-form-section">
+          <h3>Contato e localização</h3>
+          <div className="tenant-form-grid">
+            <label>Telefone<input name="phone" type="tel" placeholder="DDD + número"/></label>
+            <label>Cidade<input name="city" placeholder="Cidade"/></label>
+            <label>UF<input name="state" maxLength={2} placeholder="MG"/></label>
+          </div>
+        </div>
+        <div className="tenant-form-section tenant-access-section">
+          <h3>Acesso inicial</h3><p>Este e-mail receberá o convite para criar a senha de administrador.</p>
+          <div className="tenant-form-grid"><label className="wide">E-mail do administrador<input name="administrator_email" type="email" required placeholder="administrador@empresa.com.br"/></label></div>
+        </div>
+        <div className="tenant-form-actions"><span>Os dados e atendimentos ficarão isolados das demais empresas.</span><button className="crm-primary" disabled={busy}>{busy?<LoaderCircle className="spin"/>:<Building2/>}Cadastrar empresa</button></div>
       </form>
       {organizations.length?<p className="crm-muted">{organizations.length} empresa(s) cadastrada(s) na plataforma.</p>:null}
     </section>:null}
